@@ -53,8 +53,9 @@ export default function PourPlayMasterScene() {
       const syncScene = (p: number) => {
         const next = sceneAt(p);
         if (next === scene) return;
+        const dir = next > scene ? 1 : -1;
         scene = next;
-        videoRef.current?.show(next);
+        videoRef.current?.show(next, dir);
       };
 
       ScrollTrigger.create({
@@ -67,6 +68,15 @@ export default function PourPlayMasterScene() {
           if (introDone.current) syncScene(self.progress);
         },
       });
+
+      // the picture leans in a little as you scroll, so every bit of scroll moves something even while a clip loops
+      if (!reduced) {
+        gsap.fromTo(
+          ".video-stage",
+          { scale: 1, yPercent: 0 },
+          { scale: 1.06, yPercent: -1.5, ease: "none", scrollTrigger: { ...trigger, scrub: 0.9 } },
+        );
+      }
 
       const tl = gsap.timeline({
         defaults: { ease: "power2.out" },
@@ -166,7 +176,7 @@ export default function PourPlayMasterScene() {
       <div className="sticky top-0 isolate h-screen w-full overflow-hidden bg-n100 md:bg-white">
         {/* LAYER 0: Display type behind the video */}
         <div className="absolute inset-0 z-0">
-          <div className="s1 absolute inset-x-0 top-[max(10%,6rem)] flex flex-col items-start px-5 md:top-[24%] md:flex-row md:items-baseline md:justify-between md:px-20">
+          <div className="s1 absolute inset-x-0 top-[max(10%,6rem)] flex flex-col items-start px-5 md:top-[22%] md:flex-row md:items-start md:justify-between md:px-20">
             <h1 className="intro invisible">
               <span className="sr-only">{l({ en: "DIWAN", ar: "ديوان" })}</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -174,10 +184,10 @@ export default function PourPlayMasterScene() {
                 src="/assets/diwan/Diwan_Logo_Colour_tight.png"
                 alt=""
                 aria-hidden="true"
-                className="h-24 w-auto md:h-[clamp(11rem,40vh,22rem)] [@media(max-height:560px)]:h-14"
+                className="h-24 w-auto md:h-[clamp(9rem,32vh,19rem)] [@media(max-height:560px)]:h-14"
               />
             </h1>
-            <p className="intro invisible mt-3 self-start font-arabic [@media(max-height:560px)]:hidden text-[clamp(1.35rem,6.4vw,1.9rem)] font-bold leading-tight text-aqeeq md:ms-auto md:w-[24vw] md:self-auto md:text-end md:text-[clamp(2rem,4.2vw,4.5rem)]">
+            <p className="intro invisible mt-3 self-start font-arabic [@media(max-height:560px)]:hidden text-[clamp(1.35rem,6.4vw,1.9rem)] font-bold leading-tight text-aqeeq md:ms-auto md:mt-0 md:w-[26vw] md:self-auto md:text-end md:text-[clamp(1.8rem,3.3vw,3.6rem)]">
               {l({ en: "The story begins with a cup", ar: "الحكاية تبدأ بفنجان" })}
             </p>
           </div>
@@ -207,9 +217,11 @@ export default function PourPlayMasterScene() {
         </div>
 
         {/* LAYER 1: Video scenes */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[50svh] [mask-image:linear-gradient(to_bottom,transparent,#000_24%)] md:inset-0 md:h-auto md:[mask-image:none] md:mix-blend-multiply">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[50svh] [mask-image:linear-gradient(to_bottom,transparent_14%,#000_34%)] md:inset-0 md:h-auto md:[mask-image:none] md:mix-blend-multiply">
           <ScrollVideoScenes
             ref={videoRef}
+            className="video-stage"
+
             still={reducedMotion}
             onReady={() => {
               videoReady.current = true;
@@ -263,7 +275,7 @@ export default function PourPlayMasterScene() {
 
           {/* Stage 2B — Pour */}
           <div className="s2b invisible absolute inset-0">
-            <div className="absolute left-5 right-5 top-[max(30%,14rem)] max-w-xs md:bottom-[14%] md:left-auto md:right-20 md:top-auto">
+            <div className="absolute left-5 right-5 top-[max(30%,14rem)] max-w-xs md:left-auto md:right-20 md:top-[20%]">
               <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-green/80">
                 {l(t.pour.label)}
               </span>
@@ -272,7 +284,7 @@ export default function PourPlayMasterScene() {
               </p>
               <div className="pointer-events-auto mt-4 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-green/10 px-3 py-1.5 text-[11px] font-semibold text-green">
-                  93°C · 1:16 · 2:30
+                  {l({ en: "8 g · 80 ml · low flame", ar: "8 جم · 80 مل · نار هادئة" })}
                 </span>
                 <button
                   onClick={() => setRecipeOpen((o) => !o)}
@@ -300,13 +312,6 @@ export default function PourPlayMasterScene() {
                 {l(t.sip.label)}
               </span>
             </div>
-            <div className="absolute inset-x-0 bottom-[6%] flex justify-start px-5 md:bottom-[8%] md:justify-end md:px-20">
-              <h2
-                className={`${display} text-stroke-sandy text-[clamp(4rem,22vw,7rem)] md:text-[clamp(5rem,16vw,13rem)] drop-shadow-[0_6px_24px_rgba(0,0,0,0.35)]`}
-              >
-                {l(t.sipWord)}
-              </h2>
-            </div>
           </div>
 
           {/* Stage 4: Shop */}
@@ -328,17 +333,17 @@ export default function PourPlayMasterScene() {
               <CategoryCard
                 category="turkish"
                 defaultRotation={-3}
-                className="snap-center md:absolute md:left-14 md:top-[26%]"
+                className="snap-center md:absolute md:left-14 md:top-[24%]"
               />
               <CategoryCard
                 category="espresso"
                 defaultRotation={2}
-                className="snap-center md:absolute md:bottom-14 md:left-28"
+                className="snap-center md:absolute md:bottom-12 md:left-8"
               />
               <CategoryCard
                 category="flavored"
                 defaultRotation={-2}
-                className="snap-center md:absolute md:right-14 md:top-[38%]"
+                className="snap-center md:absolute md:right-14 md:top-[20%]"
               />
             </div>
 

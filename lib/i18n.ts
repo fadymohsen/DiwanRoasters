@@ -42,26 +42,26 @@ export const translations = {
   },
   grind: {
     text: {
-      en: "Fresh grinding preserves the bean's flavor as it is. No complications.",
-      ar: "طحن طازج يحافظ على نكهة الحبة كما هي. بدون تعقيد.",
+      en: "Coffee, water and sugar to taste, then a slow stir before the heat.",
+      ar: "قهوة وماء وسكر على ذوقك، ثم تقليب هادئ قبل النار.",
     },
-    cta: { en: "Discover the Pour", ar: "شاهد الصبّة" },
+    cta: { en: "Watch it simmer", ar: "شاهدها على النار" },
   },
   pour: {
-    label: { en: "Second Ritual — The Pour", ar: "الطقس الثاني · الصبّة" },
+    label: { en: "Second Ritual — The Simmer", ar: "الطقس الثاني · على نار هادئة" },
     text: {
-      en: "Hot water poured gently over coffee. Each pour reveals a different flavor. The simplicity of preparation is part of the joy.",
-      ar: "ماء ساخن يُصبّ على القهوة بهدوء، وكل صبّة تُظهر طعماً مختلفاً.",
+      en: "A low flame and a little patience. Lift it before it boils, and the foam stays.",
+      ar: "نار هادئة وقليل من الصبر. ارفعها قبل الغليان لتبقى الرغوة.",
     },
     recipe: { en: "Brewing Method", ar: "طريقة التحضير" },
     hide: { en: "Hide", ar: "إخفاء" },
-    step1: { en: "1. 15g medium-ground coffee, rinse the filter.", ar: "1. 15 جراماً من القهوة المطحونة متوسطاً، واغسل الفلتر." },
-    step2: { en: "2. Wet the coffee with 45g water, wait 30 seconds.", ar: "2. بلّل القهوة بـ 45 جراماً من الماء وانتظر 30 ثانية." },
-    step3: { en: "3. Pour in a circular motion up to 240g.", ar: "3. اسكب الماء بحركة دائرية حتى 240 جراماً." },
-    step4: { en: "4. Filtration finishes in about 2 minutes and 45 seconds.", ar: "4. تنتهي التصفية خلال دقيقتين و45 ثانية تقريباً." },
+    step1: { en: "1. 8 g coffee and 80 ml water in the cezve.", ar: "1. 8 جم قهوة و80 مل ماء في الركوة." },
+    step2: { en: "2. Add sugar to taste, then stir.", ar: "2. أضف السكر على ذوقك ثم قلّب." },
+    step3: { en: "3. Heat on a low flame, stirring gently.", ar: "3. سخّن على نار هادئة مع التقليب برفق." },
+    step4: { en: "4. Lift before it boils and pour gently.", ar: "4. ارفع قبل الغليان واسكب بهدوء." },
   },
   sip: {
-    label: { en: "Third Ritual — The Sip", ar: "الطقس الثالث · الرشفة" },
+    label: { en: "Third Ritual — The Cup", ar: "الطقس الثالث · الفنجان" },
   },
   shopScene: {
     choose: { en: "Choose\nYour Cup", ar: "اختر\nفنجانك" },
@@ -70,7 +70,7 @@ export const translations = {
     backToTop: { en: "Back to Top", ar: "العودة للأعلى" },
   },
   coffeeRitual: { en: "Coffee Ritual", ar: "طقس القهوة" },
-  pourWord: { en: "Pour", ar: "صبّة" },
+  pourWord: { en: "Simmer", ar: "نار هادئة" },
   sipWord: { en: "Sip", ar: "رشفة" },
   cart: {
     yourBag: { en: "Your Bag", ar: "سلتك" },

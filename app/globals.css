@@ -176,3 +176,15 @@ html[dir="rtl"] .marquee-track { animation-direction: reverse; }
 
 /* soft pulse used by the add-to-bag flight target */
 @keyframes bag-bump { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+/* phones: the wide shot is shown wider than the screen (not cropped to its middle), anchored to the bottom */
+@media (max-width: 767px) {
+  .scene-video {
+    inset: auto auto 0 50% !important;
+    width: 158% !important;
+    max-width: none !important; /* the base style caps videos at 100% */
+    height: auto !important;
+    aspect-ratio: 16 / 9;
+    transform: translateX(-50%);
+  }
+}
