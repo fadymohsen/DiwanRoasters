@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export type Lang = "en" | "ar";
 
@@ -8,11 +9,26 @@ interface LangState {
   toggle: () => void;
 }
 
-export const useLangStore = create<LangState>((set) => ({
-  lang: "en",
-  setLang: (lang) => set({ lang }),
-  toggle: () => set((s) => ({ lang: s.lang === "en" ? "ar" : "en" })),
-}));
+export const LANG_KEY = "diwan-lang-v1";
+
+/** The visitor's language: remembered, so it survives reloads and new visits. */
+export const useLangStore = create<LangState>()(
+  persist(
+    (set) => ({
+      lang: "en",
+      setLang: (lang) => set({ lang }),
+      toggle: () => set((s) => ({ lang: s.lang === "en" ? "ar" : "en" })),
+    }),
+    { name: LANG_KEY, skipHydration: true },
+  ),
+);
+
+/** Language to start in when nothing is saved: a ?lang= link wins, then the browser's language. */
+export function detectLang(): Lang {
+  const q = new URLSearchParams(window.location.search).get("lang");
+  if (q === "ar" || q === "en") return q;
+  return navigator.languages?.some((l) => l.toLowerCase().startsWith("ar")) || navigator.language?.toLowerCase().startsWith("ar") ? "ar" : "en";
+}
 
 export function useT() {
   const lang = useLangStore((s) => s.lang);

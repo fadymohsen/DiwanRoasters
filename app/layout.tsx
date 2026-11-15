@@ -47,6 +47,14 @@ export const viewport = { themeColor: "#0E3A33" };
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning className={`${playfair.variable} ${jakarta.variable} ${notoArabic.variable} ${amiri.variable} ${plex.variable} ${cormorant.variable}`}>
+      <head>
+        <script
+          // runs before the first paint: apply the saved, linked or browser language so the page never flashes the wrong direction
+          dangerouslySetInnerHTML={{
+            __html: `try{var q=new URLSearchParams(location.search).get("lang"),s=localStorage.getItem("diwan-lang-v1"),l=q==="ar"||q==="en"?q:s?JSON.parse(s).state.lang:(navigator.language||"").toLowerCase().indexOf("ar")===0?"ar":"en";var d=document.documentElement;d.lang=l;d.dir=l==="ar"?"rtl":"ltr"}catch(e){}`,
+          }}
+        />
+      </head>
       <body suppressHydrationWarning className="font-sans antialiased">
         <SkipLink />
         <ProgressGate />
