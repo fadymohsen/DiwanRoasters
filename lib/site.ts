@@ -4,12 +4,12 @@ export const SITE = {
   phone: "01002745122",
   /** international format without + or 0, as wa.me expects */
   whatsapp: "201002745122",
-  facebook: "https://facebook.com/diwan_eg",
+  facebook: "https://www.facebook.com/share/1CTepQxyv2/",
   instagram: "https://instagram.com/diwan_eg",
   tiktok: "https://tiktok.com/@diwan_eg",
   /** Instapay address and wallet number to show at checkout. While empty, customers are told the details arrive on WhatsApp. */
   instapay: "",
-  wallet: "",
+  wallet: "01002745122",
   /** extra discount for paying by Instapay or wallet, in percent */
   payDiscountPct: 5,
   baseUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
