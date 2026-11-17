@@ -238,7 +238,7 @@ export default function AdminOverview() {
                 <button onClick={() => markRead(m.id)} className="flex w-full items-start gap-3 py-3 text-start">
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${m.read ? "bg-transparent" : "bg-[#1a1a1a]"}`} aria-label={m.read ? undefined : l({ en: "Unread", ar: "غير مقروء" })} />
                   <span className="min-w-0 flex-1 text-sm">
-                    <span className={m.read ? "" : "font-semibold"}>{m.name}</span>
+                    <span className={m.read ? "" : "font-semibold"}>{m.name}</span>{m.topic === "business" && <span className="ms-2 rounded-full bg-[#1a1a1a] px-2 py-0.5 text-[11px] font-semibold text-white">B2B</span>}
                     <span className="ms-2 text-xs text-[#8a8a8a]" dir="ltr">{m.contact}</span>
                     <span className="block truncate text-[#616161]">{m.body}</span>
                   </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/LocLink";
 import { CATEGORY_META, PRODUCTS } from "@/data/products";
 import Reveal from "@/components/ui/Reveal";
 import { ImageReveal, Marquee, SplitText } from "@/components/ui/motion";

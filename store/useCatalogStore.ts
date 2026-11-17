@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { PRODUCTS, type Bi, type CategoryId } from "@/data/products";
+import { SITE } from "@/lib/site";
 
 export interface CatalogVariant {
   key: string;
@@ -98,6 +99,14 @@ export interface Refund {
   restocked: boolean;
 }
 
+export type PayMethod = "cod" | "instapay" | "wallet";
+
+export interface Gift {
+  name: string;
+  phone: string;
+  message: string;
+}
+
 export interface Order {
   id: string;
   createdAt: number;
@@ -110,7 +119,11 @@ export interface Order {
   total: number;
   refunds: Refund[];
   status: OrderStatus;
-  payment: { method: "cod"; paid: boolean };
+  payment: { method: PayMethod; paid: boolean };
+  /** EGP taken off for paying by Instapay or wallet */
+  payDiscount?: number;
+  /** Set when the order is a gift: who receives it */
+  gift?: Gift | null;
   tracking: { courier: string; number: string };
   /** Internal, never shown to the customer */
   internalNote: string;
@@ -154,7 +167,7 @@ const seed = (): CatalogItem[] =>
     variants: p.variants.map((v) => ({ ...v, sku: sku(p.id, v.key), compareAt: null, cost: null, stock: null, threshold: 5 })),
   }));
 
-export type NewOrder = Pick<Order, "customer" | "lines" | "subtotal" | "discount" | "shipping" | "total"> & { source?: "web" | "draft" };
+export type NewOrder = Pick<Order, "customer" | "lines" | "subtotal" | "discount" | "shipping" | "total"> & { source?: "web" | "draft"; payMethod?: PayMethod; payDiscount?: number; gift?: Gift | null };
 
 interface CatalogState {
   items: CatalogItem[];
@@ -197,7 +210,7 @@ export const useCatalogStore = create<CatalogState>()(
       adjustments: [],
       discounts: [],
       shippingRates: [],
-      settings: { storeName: "DIWAN", phone: "", whatsapp: "", supportEmail: "", orderPrefix: "DW" },
+      settings: { storeName: "DIWAN", phone: SITE.phone, whatsapp: SITE.phone, supportEmail: "", orderPrefix: "DW" },
       upsertDiscount: (d) => set((s) => ({ discounts: s.discounts.some((x) => x.id === d.id) ? s.discounts.map((x) => (x.id === d.id ? d : x)) : [d, ...s.discounts] })),
       deleteDiscount: (id) => set((s) => ({ discounts: s.discounts.filter((x) => x.id !== id) })),
       upsertRate: (r) => set((s) => ({ shippingRates: s.shippingRates.some((x) => x.id === r.id) ? s.shippingRates.map((x) => (x.id === r.id ? r : x)) : [...s.shippingRates, r] })),
@@ -284,14 +297,17 @@ export const useCatalogStore = create<CatalogState>()(
       resetCatalog: () => set({ items: seed() }),
       placeOrder: (input) => {
         const now = Date.now();
+        const { payMethod, payDiscount, gift, ...rest } = input;
         const order: Order = {
-          ...input,
+          ...rest,
           source: input.source ?? "web",
+          payDiscount: payDiscount ?? 0,
+          gift: gift ?? null,
           refunds: [],
           id: `${get().settings.orderPrefix || "DW"}-${String(get().orders.length + 1001)}`,
           createdAt: now,
           status: "new",
-          payment: { method: "cod", paid: false },
+          payment: { method: payMethod ?? "cod", paid: false },
           tracking: { courier: "", number: "" },
           internalNote: "",
           timeline: [{ status: "new", at: now }],

@@ -1,34 +1,7 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { useLangStore, type Lang } from "@/lib/lang";
 
-export type Lang = "en" | "ar";
-
-interface LangState {
-  lang: Lang;
-  setLang: (lang: Lang) => void;
-  toggle: () => void;
-}
-
-export const LANG_KEY = "diwan-lang-v1";
-
-/** The visitor's language: remembered, so it survives reloads and new visits. */
-export const useLangStore = create<LangState>()(
-  persist(
-    (set) => ({
-      lang: "en",
-      setLang: (lang) => set({ lang }),
-      toggle: () => set((s) => ({ lang: s.lang === "en" ? "ar" : "en" })),
-    }),
-    { name: LANG_KEY, skipHydration: true },
-  ),
-);
-
-/** Language to start in when nothing is saved: a ?lang= link wins, then the browser's language. */
-export function detectLang(): Lang {
-  const q = new URLSearchParams(window.location.search).get("lang");
-  if (q === "ar" || q === "en") return q;
-  return navigator.languages?.some((l) => l.toLowerCase().startsWith("ar")) || navigator.language?.toLowerCase().startsWith("ar") ? "ar" : "en";
-}
+export { useLangStore };
+export type { Lang };
 
 export function useT() {
   const lang = useLangStore((s) => s.lang);
@@ -43,7 +16,7 @@ export function useDir() {
 // Structured translations for components with many strings
 export const translations = {
   nav: {
-    shop: { en: "Shop", ar: "المتجر" },
+    shop: { en: "Shop", ar: "منتجاتنا" },
     ourStory: { en: "Our Story", ar: "حكايتنا" },
     home: { en: "Home", ar: "الرئيسية" },
   },
@@ -112,7 +85,7 @@ export const translations = {
     tagline: { en: "Coffee for Every Culture", ar: "قهوة لكل ثقافة" },
   },
   shopPage: {
-    title: { en: "Shop", ar: "المتجر" },
+    title: { en: "Shop", ar: "منتجاتنا" },
     subtitle: {
       en: "Choose your coffee. Every blend is carefully roasted and crafted for the Egyptian palate.",
       ar: "اختار قهوتك. كل توليفة محمّصة بعناية ومُعدّة للذوق المصري.",

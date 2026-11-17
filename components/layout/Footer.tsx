@@ -1,18 +1,20 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/LocLink";
 import { ArrowUpRight } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import { Magnetic, SplitText } from "@/components/ui/motion";
-import { FacebookIcon, InstagramIcon, TikTokIcon } from "@/components/ui/SocialIcons";
+import { FacebookIcon, InstagramIcon, TikTokIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
+import { SITE, waLink } from "@/lib/site";
 import { CATEGORY_IDS, CATEGORY_META, CLOSING_LINE } from "@/data/products";
 import { useLangStore, useLocalized } from "@/lib/i18n";
 import { useCatalogStore } from "@/store/useCatalogStore";
 
 const SOCIAL = [
-  { name: "Instagram", href: "https://instagram.com/diwan_eg", Icon: InstagramIcon },
-  { name: "Facebook", href: "https://facebook.com/diwan_eg", Icon: FacebookIcon },
-  { name: "TikTok", href: "https://tiktok.com/@diwan_eg", Icon: TikTokIcon },
+  { name: "Instagram", href: SITE.instagram, Icon: InstagramIcon },
+  { name: "Facebook", href: SITE.facebook, Icon: FacebookIcon },
+  { name: "TikTok", href: SITE.tiktok, Icon: TikTokIcon },
+  { name: "WhatsApp", href: waLink(), Icon: WhatsAppIcon },
 ];
 
 export default function Footer() {
@@ -49,8 +51,8 @@ export default function Footer() {
             </p>
           </div>
 
-          <nav aria-label={l({ en: "Shop", ar: "المتجر" })}>
-            <h3 className={col}>{l({ en: "Shop", ar: "المتجر" })}</h3>
+          <nav aria-label={l({ en: "Shop", ar: "منتجاتنا" })}>
+            <h3 className={col}>{l({ en: "Shop", ar: "منتجاتنا" })}</h3>
             <ul className="space-y-3">
               {CATEGORY_IDS.map((c) => (
                 <li key={c}>
@@ -87,9 +89,9 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-            {(settings.phone || settings.supportEmail) && (
+            {(
               <ul className="mt-5 space-y-1 text-sm text-sandy/80">
-                {settings.phone && <li><a href={`tel:${settings.phone}`} dir="ltr" className="hover:text-sandy">{settings.phone}</a></li>}
+                <li><a href={`tel:${settings.phone || SITE.phone}`} dir="ltr" className="hover:text-sandy">{settings.phone || SITE.phone}</a></li>
                 {settings.supportEmail && <li><a href={`mailto:${settings.supportEmail}`} dir="ltr" className="hover:text-sandy">{settings.supportEmail}</a></li>}
               </ul>
             )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/LocLink";
 import { AnimatePresence, motion } from "motion/react";
 import { ShoppingBag, X } from "lucide-react";
 import { setScrollLocked } from "@/components/providers/SmoothScrollProvider";
@@ -19,7 +19,17 @@ export default function CartDrawer() {
   const lang = useLangStore((s) => s.lang);
   const l = useLocalized();
   const [loading, setLoading] = useState(false);
+  const [sheet, setSheet] = useState(false);
   const trap = useTrap(() => setOpen(false));
+
+  // decide sheet or side drawer ahead of time, so the opening animation never switches mid-way
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setSheet(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -44,7 +54,7 @@ export default function CartDrawer() {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px] max-md:items-end"
           onClick={close}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -57,12 +67,17 @@ export default function CartDrawer() {
             aria-label={l({ en: "Your bag", ar: "سلتك" })}
             data-lenis-prevent
             onClick={(e) => e.stopPropagation()}
-            initial={{ x: off }}
-            animate={{ x: 0 }}
-            exit={{ x: off }}
+            initial={sheet ? { y: "100%" } : { x: off }}
+            animate={sheet ? { y: 0 } : { x: 0 }}
+            exit={sheet ? { y: "100%" } : { x: off }}
+            drag={sheet ? "y" : false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.6 }}
+            onDragEnd={(_, info) => { if (info.offset.y > 120 || info.velocity.y > 600) close(); }}
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-            className={`flex h-full w-full max-w-[26rem] flex-col bg-sandy shadow-2xl ${lang === "ar" ? "me-auto" : ""}`}
+            className={`flex h-full w-full max-w-[26rem] flex-col bg-sandy shadow-2xl max-md:h-[88svh] max-md:max-w-none max-md:rounded-t-3xl ${lang === "ar" ? "md:me-auto" : ""}`}
           >
+            <span aria-hidden="true" className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-n300 md:hidden" />
             <div className="flex items-center justify-between border-b border-n200 px-5 py-4">
               <h3 className="font-editorial text-2xl font-semibold text-green">
                 {l({ en: "Your bag", ar: "سلتك" })} <bdi className="text-base font-normal text-n400">({count})</bdi>

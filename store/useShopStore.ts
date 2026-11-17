@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { PayMethod } from "@/store/useCatalogStore";
 
 /** Cart lines are keyed `${productId}:${variantKey}`, see lineKey() in useCatalogStore. */
 interface ShopState {
@@ -18,11 +19,20 @@ interface ShopState {
   clearCart: () => void;
   toggleWishlist: (id: string) => void;
   setCartOpen: (open: boolean) => void;
+  payMethod: PayMethod;
+  setPayMethod: (m: PayMethod) => void;
+  /** the visitor chose to send this order as a gift */
+  gift: { on: boolean; name: string; phone: string; message: string };
+  setGift: (patch: Partial<{ on: boolean; name: string; phone: string; message: string }>) => void;
 }
 
 export const useShopStore = create<ShopState>()(
   persist(
     (set) => ({
+      payMethod: "cod" as PayMethod,
+      setPayMethod: (payMethod) => set({ payMethod }),
+      gift: { on: false, name: "", phone: "", message: "" },
+      setGift: (patch) => set((s) => ({ gift: { ...s.gift, ...patch } })),
   cart: {},
   wishlist: {},
   isCartOpen: false,
@@ -44,7 +54,7 @@ export const useShopStore = create<ShopState>()(
       delete next[key];
       return { cart: next };
     }),
-  clearCart: () => set({ cart: {}, promo: "" }),
+  clearCart: () => set({ cart: {}, promo: "", payMethod: "cod", gift: { on: false, name: "", phone: "", message: "" } }),
   toggleWishlist: (id) => set((s) => ({ wishlist: { ...s.wishlist, [id]: !s.wishlist[id] } })),
   setCartOpen: (open) => set({ isCartOpen: open }),
 }),

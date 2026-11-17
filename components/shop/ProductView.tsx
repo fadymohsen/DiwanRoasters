@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/LocLink";
 import { Minus, Plus } from "lucide-react";
 import HeaderNav from "@/components/layout/HeaderNav";
 import CartDrawer from "@/components/layout/CartDrawer";
@@ -118,7 +118,7 @@ export default function ProductView({ id }: { id: string }) {
           <ol className="flex flex-wrap items-center gap-2">
             <li><Link href="/" className="hover:text-green hover:underline">{l({ en: "Home", ar: "الرئيسية" })}</Link></li>
             <li aria-hidden="true">/</li>
-            <li><Link href="/shop" className="hover:text-green hover:underline">{l({ en: "Shop", ar: "المتجر" })}</Link></li>
+            <li><Link href="/shop" className="hover:text-green hover:underline">{l({ en: "Shop", ar: "منتجاتنا" })}</Link></li>
             <li aria-hidden="true">/</li>
             <li><Link href={`/shop?category=${item.categoryId}`} className="hover:text-green hover:underline">{cat}</Link></li>
             <li aria-hidden="true">/</li>

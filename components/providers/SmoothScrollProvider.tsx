@@ -19,14 +19,6 @@ const applyLock = () => {
   }
 };
 
-/** Smooth-scroll to a 0..1 fraction of the full page scroll range. */
-export function scrollToProgress(fraction: number, duration = 1.8) {
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  const top = max * Math.min(1, Math.max(0, fraction));
-  if (lenisInstance) lenisInstance.scrollTo(top, { duration });
-  else window.scrollTo({ top, behavior: "smooth" });
-}
-
 /** Smooth-scroll to an absolute Y offset. */
 export function scrollToY(top: number, duration = 1.6) {
   if (lenisInstance) lenisInstance.scrollTo(top, { duration });

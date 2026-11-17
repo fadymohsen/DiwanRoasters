@@ -1,7 +1,7 @@
 "use client";
 
 import type { MouseEvent } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/LocLink";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
 import { CATEGORY_META, PRODUCTS, categoryFrom, type CategoryId } from "@/data/products";

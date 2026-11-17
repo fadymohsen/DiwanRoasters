@@ -188,3 +188,13 @@ html[dir="rtl"] .marquee-track { animation-direction: reverse; }
     transform: translateX(-50%);
   }
 }
+
+/* touch: no grey flash, no 300 ms wait, a visible press on every tappable thing */
+html { -webkit-tap-highlight-color: transparent; }
+a, button, [role="button"], summary, label, select { touch-action: manipulation; }
+@media (hover: none) {
+  a:active, button:active:not(:disabled) { transition-duration: 80ms; }
+  .btn:active { transform: scale(0.97); }
+}
+/* respect the notch and home bar for anything pinned to the bottom edge */
+.safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }

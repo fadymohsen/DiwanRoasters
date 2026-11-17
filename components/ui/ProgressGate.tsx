@@ -1,10 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { ScrollProgress } from "@/components/ui/motion";
 
+/** Reading progress bar across the top of every storefront page. */
 export default function ProgressGate() {
-  const path = usePathname();
-  if (path.startsWith("/admin")) return null;
   return <ScrollProgress />;
 }

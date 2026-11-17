@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/LocLink";
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Globe, Menu, ShoppingBag, X } from "lucide-react";
-import { scrollToProgress } from "@/components/providers/SmoothScrollProvider";
+import { scrollToY } from "@/components/providers/SmoothScrollProvider";
 import { useShopStore } from "@/store/useShopStore";
 import { useTrap } from "@/lib/useTrap";
 import { useLangStore, useLocalized, translations } from "@/lib/i18n";
@@ -21,9 +21,23 @@ export default function HeaderNav() {
   const menuTrap = useTrap(() => setMobileOpen(false));
   // once the page reaches the DIWAN sections the header gets its own sand bar so it never sits on green
   const [solid, setSolid] = useState(false);
+  // on phones the bar slides out of the way while reading down and returns on the first scroll up
+  const [tucked, setTucked] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const phone = window.matchMedia("(max-width: 767px)").matches;
+      if (!phone || y < 160) setTucked(false);
+      else if (Math.abs(y - last) > 8) setTucked(y > last);
+      last = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   useEffect(() => {
     const check = () => {
-      if (pathname !== "/") {
+      if (!/^\/(en|ar)\/?$/.test(pathname)) {
         setSolid(window.scrollY > 24 || !!document.querySelector("[data-header-solid]"));
         return;
       }
@@ -44,19 +58,20 @@ export default function HeaderNav() {
     { href: "/our-story", label: l(t.ourStory) },
     { href: "/#blends", label: l({ en: "The Nine Blends", ar: "التوليفات التسع" }) },
     { href: "/#brew", label: l({ en: "Brewing", ar: "التحضير" }) },
+    { href: "/#business", label: l({ en: "For business", ar: "للأعمال" }) },
     { href: "/contact", label: l({ en: "Contact", ar: "تواصل معنا" }) },
   ];
 
   return (
     <>
-      <motion.header initial={{ y: -24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className={`fixed inset-x-0 top-0 z-40 flex items-center justify-between px-5 py-3 transition-colors duration-300 md:px-12 lg:px-20 ${solid ? "border-b border-n200 bg-sandy/90 backdrop-blur" : ""}`}>
+      <motion.header initial={{ y: -24, opacity: 0 }} animate={{ y: tucked ? "-110%" : 0, opacity: 1 }} transition={{ duration: tucked ? 0.3 : 0.6, ease: [0.22, 1, 0.36, 1] }} className={`fixed inset-x-0 top-0 z-40 flex items-center justify-between px-5 py-3 transition-colors duration-300 md:px-12 lg:px-20 ${solid ? "border-b border-n200 bg-sandy/90 backdrop-blur" : ""}`}>
         {/* Logo */}
         <Link
           href="/"
           onClick={(e) => {
-            if (window.location.pathname === "/") {
+            if (/^\/(en|ar)\/?$/.test(window.location.pathname)) {
               e.preventDefault();
-              scrollToProgress(0);
+              scrollToY(0);
             }
           }}
           className="flex items-center"
@@ -119,43 +134,48 @@ export default function HeaderNav() {
       </motion.header>
 
       {/* Mobile Menu */}
-      {mobileOpen && (
-        <div ref={menuTrap} role="dialog" aria-modal="true" aria-label={l({ en: "Menu", ar: "القائمة" })} className="fixed inset-0 z-50 flex flex-col bg-sandy">
-          <div className="flex items-center justify-between px-5 py-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/diwan/Diwan_Logo_Colour_tight.png" alt={l({ en: "DIWAN", ar: "ديوان" })} className="h-12 w-auto" />
-            <button onClick={() => setMobileOpen(false)} aria-label={l({ en: "Close menu", ar: "إغلاق القائمة" })} className="rounded-full p-2.5">
-              <X className="h-5 w-5 text-green" />
-            </button>
-          </div>
-          <nav className="flex flex-1 flex-col items-center justify-center gap-8">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="font-editorial text-3xl font-bold text-green"
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            ref={menuTrap}
+            role="dialog"
+            aria-modal="true"
+            aria-label={l({ en: "Menu", ar: "القائمة" })}
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 z-50 flex flex-col bg-sandy"
+          >
+            <div className="flex items-center justify-between px-5 py-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/assets/diwan/Diwan_Logo_Colour_tight.png" alt={l({ en: "DIWAN", ar: "ديوان" })} className="h-12 w-auto" />
+              <button onClick={() => setMobileOpen(false)} aria-label={l({ en: "Close menu", ar: "إغلاق القائمة" })} className="rounded-full p-2.5 transition active:scale-90">
+                <X className="h-5 w-5 text-green" />
+              </button>
+            </div>
+            <nav className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto pb-10">
+              {NAV_LINKS.map((link, i) => (
+                <motion.div key={link.href} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 + i * 0.05, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
+                  <Link href={link.href} onClick={() => setMobileOpen(false)} className="block px-4 py-1 font-editorial text-3xl font-bold text-green transition active:scale-95">
+                    {link.label}
+                  </Link>
+                </motion.div>
+              ))}
+              <motion.button
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.06 + NAV_LINKS.length * 0.05, duration: 0.45 }}
+                onClick={() => { toggle(); setMobileOpen(false); }}
+                className="mt-2 flex items-center gap-2 rounded-full bg-green/10 px-6 py-3 text-sm font-semibold text-green transition active:scale-95"
               >
-                {link.label}
-              </Link>
-            ))}
-            <Link
-              href="/"
-              onClick={() => setMobileOpen(false)}
-              className="mt-4 rounded-full border-2 border-green px-8 py-3 text-sm font-semibold text-green transition hover:bg-green hover:text-sandy"
-            >
-              {l(t.home)}
-            </Link>
-            <button
-              onClick={() => { toggle(); setMobileOpen(false); }}
-              className="flex items-center gap-2 rounded-full bg-green/10 px-6 py-3 text-sm font-semibold text-green"
-            >
-              <Globe className="h-4 w-4" />
-              {lang === "en" ? "عربي" : "English"}
-            </button>
-          </nav>
-        </div>
-      )}
+                <Globe className="h-4 w-4" />
+                {lang === "en" ? "عربي" : "English"}
+              </motion.button>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

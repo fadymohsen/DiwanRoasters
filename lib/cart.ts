@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { inStock, isLive, resolveLine, useCatalogStore, type CatalogItem, type CatalogVariant } from "@/store/useCatalogStore";
 import { useShopStore } from "@/store/useShopStore";
 import { applyCode, findRate, shippingFor } from "@/lib/pricing";
+import { SITE } from "@/lib/site";
 
 /** True once the saved bag has been read from the browser. */
 export function useBagReady() {
@@ -35,6 +36,7 @@ export function useCartLines() {
   const rates = useCatalogStore((s) => s.shippingRates);
   const promo = useShopStore((s) => s.promo);
   const city = useShopStore((s) => s.shipCity);
+  const payMethod = useShopStore((s) => s.payMethod);
   // read the clock after mount, so the prerendered page does not freeze a date
   const [now, setNow] = useState(0);
   useEffect(() => {
@@ -60,7 +62,9 @@ export function useCartLines() {
     const discountAmount = code?.ok ? code.amount : 0;
     const after = subtotal - discountAmount;
     const ship = shippingFor(findRate(rates, city), after, !!code?.ok && code.freeShipping);
-    const total = after + (ship?.price ?? 0);
-    return { lines, count, subtotal, savings, blocked, promo: code, discountAmount, shipping: ship, total };
-  }, [cart, items, discounts, rates, promo, city, now]);
+    // paying by Instapay or wallet takes a further percentage off the goods, after any promo code
+    const payDiscount = payMethod === "cod" ? 0 : Math.round((after * SITE.payDiscountPct) / 100);
+    const total = after - payDiscount + (ship?.price ?? 0);
+    return { lines, count, subtotal, savings, blocked, promo: code, discountAmount, shipping: ship, total, payDiscount, payMethod };
+  }, [cart, items, discounts, rates, promo, city, now, payMethod]);
 }

@@ -6,6 +6,7 @@ import { useCartLines } from "@/lib/cart";
 import { useShopStore } from "@/store/useShopStore";
 import { useLangStore, useLocalized } from "@/lib/i18n";
 import { money } from "@/lib/format";
+import { SITE } from "@/lib/site";
 
 function PromoField() {
   const l = useLocalized();
@@ -48,7 +49,7 @@ function PromoField() {
 }
 
 export default function OrderSummary({ showItems = false, promoField = true }: { showItems?: boolean; promoField?: boolean }) {
-  const { lines, subtotal, savings, count, discountAmount, promo, shipping, total } = useCartLines();
+  const { lines, subtotal, savings, count, discountAmount, promo, shipping, total, payDiscount } = useCartLines();
   const code = useShopStore((s) => s.promo);
   const l = useLocalized();
   const lang = useLangStore((s) => s.lang);
@@ -78,6 +79,9 @@ export default function OrderSummary({ showItems = false, promoField = true }: {
       {savings > 0 && <div className={`${row} text-[#2E6B4F]`}><span>{l({ en: "You save", ar: "وفّرت" })}</span><bdi>{money(savings, lang)}</bdi></div>}
       {code && promo?.ok && discountAmount > 0 && (
         <div className={`${row} text-[#2E6B4F]`}><span>{l({ en: "Promo code", ar: "كود الخصم" })}</span><bdi>-{money(discountAmount, lang)}</bdi></div>
+      )}
+      {payDiscount > 0 && (
+        <div className={`${row} text-[#2E6B4F]`}><span>{l({ en: `Instapay / wallet (${SITE.payDiscountPct}% off)`, ar: `إنستاباي / محفظة (خصم ${SITE.payDiscountPct}%)` })}</span><bdi>-{money(payDiscount, lang)}</bdi></div>
       )}
       <div className={row}>
         <span className="text-n500">{l({ en: "Delivery", ar: "التوصيل" })}</span>

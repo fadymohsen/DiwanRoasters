@@ -1,15 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/LocLink";
 import { useState } from "react";
-import { BRAND_STORY, DEFERRED, PERSONAS, PILLARS, PRODUCTS, REELS } from "@/data/products";
+import { BRAND_STORY, PERSONAS, PILLARS, PRODUCTS, REELS } from "@/data/products";
 import { AnimatePresence, motion } from "motion/react";
 import Reveal from "@/components/ui/Reveal";
 import { Magnetic, SplitText } from "@/components/ui/motion";
 import { useCatalogStore } from "@/store/useCatalogStore";
 import { money } from "@/lib/format";
 import { useLangStore } from "@/lib/i18n";
-import { useTrap } from "@/lib/useTrap";
 
 export function Story() {
   const lang = useLangStore((s) => s.lang);
@@ -147,89 +146,6 @@ export function Behind() {
           </div>
         </div>
       </div>
-    </section>
-  );
-}
-
-export function Roadmap() {
-  const lang = useLangStore((s) => s.lang);
-  const ar = lang === "ar";
-  const [open, setOpen] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
-  const [done, setDone] = useState(false);
-  const trap = useTrap(() => setOpen(null));
-  return (
-    <section id="soon" className="bg-sand-deep/40 py-24" aria-labelledby="soon-h">
-      <div className="wrap">
-        <Reveal>
-          <p className="font-latin text-sm tracking-[0.3em] text-carnelian">{ar ? "قريباً" : "COMING SOON"}</p>
-          <h2 id="soon-h" className="font-serif text-4xl font-bold text-green">{ar ? "قريباً في ديوان" : "Coming soon to DIWAN"}</h2>
-        </Reveal>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {DEFERRED.map((d, i) => (
-            <Reveal key={d.en} delay={(i % 3) * 0.07}>
-              <article className="rounded-[14px] border border-n200 bg-sand p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
-                <span className="rounded-[6px] bg-sand-deep px-3 py-1 text-xs font-semibold text-green">
-                  {ar ? "قريباً" : "Soon, details not yet final"}
-                </span>
-                <h3 className="mt-4 font-serif text-2xl font-bold text-green">{d[lang]}</h3>
-                <button className="btn btn-ghost mt-4 text-sm" onClick={() => { setOpen(d.en); setDone(false); }}>
-                  {ar ? "بلّغني عند الإطلاق" : "Notify me at launch"}
-                </button>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-
-        <figure className="mt-12">
-          <div className="grid gap-3 md:h-[30rem] md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:grid-rows-2">
-            {/* eslint-disable @next/next/no-img-element */}
-            <img src="/assets/diwan/photo/shopfront-exterior.webp" alt={ar ? "تصور مستقبلي لواجهة مقهى ديوان بمظلة خضراء داكنة" : "Future concept of the DIWAN café front, with a deep green awning"} loading="lazy" className="h-56 w-full rounded-[14px] object-cover md:row-span-2 md:h-full" />
-            <img src="/assets/diwan/photo/shopfront-bar.webp" alt={ar ? "بار القهوة والرفوف داخل مقهى ديوان المستقبلي" : "The coffee bar and shelves inside the future DIWAN café"} loading="lazy" className="h-40 w-full min-h-0 rounded-[14px] object-cover md:h-full" />
-            <img src="/assets/diwan/photo/shopfront-seating.webp" alt={ar ? "منطقة الجلوس داخل مقهى ديوان المستقبلي" : "The seating area inside the future DIWAN café"} loading="lazy" className="h-40 w-full min-h-0 rounded-[14px] object-cover md:h-full" />
-            {/* eslint-enable @next/next/no-img-element */}
-          </div>
-          <figcaption className="mt-3 text-sm text-ink/70">
-            {ar
-              ? "اتجاه بيئي مستقبلي: مقهى ومحمصة ديوان، بمظلة خضراء داكنة وخشب دافئ وخامات طبيعية هادئة."
-              : "A future direction: the DIWAN café and roastery, with a deep green awning, warm wood and calm natural materials."}
-          </figcaption>
-        </figure>
-      </div>
-
-      {open && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/50 p-4" onClick={() => setOpen(null)}>
-          <form
-            ref={trap}
-            role="dialog"
-            aria-modal="true"
-            aria-label={DEFERRED.find((d) => d.en === open)?.[lang]}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-[14px] bg-sand p-6"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const k = "diwan-notify";
-              const list = JSON.parse(localStorage.getItem(k) ?? "[]");
-              localStorage.setItem(k, JSON.stringify([...list, { category: open, email }]));
-              setDone(true);
-            }}
-          >
-            <h3 className="font-serif text-2xl font-bold text-green">{DEFERRED.find((d) => d.en === open)?.[lang]}</h3>
-            {done ? (
-              <p className="mt-3 text-[#2E6B4F]">{ar ? "سجلنا اهتمامك. سنخبرك عند الإطلاق." : "Your interest is saved. We'll tell you at launch."}</p>
-            ) : (
-              <>
-                <label className="mt-3 block text-sm font-semibold">
-                  {ar ? "البريد الإلكتروني" : "Email"}
-                  <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full rounded-[6px] border border-n300 bg-n100 px-3 py-2" dir="ltr" />
-                </label>
-                <button className="btn btn-primary mt-4 w-full">{ar ? "بلّغني" : "Notify me"}</button>
-              </>
-            )}
-            <button type="button" className="mt-3 w-full text-sm text-green underline" onClick={() => setOpen(null)}>{ar ? "إغلاق" : "Close"}</button>
-          </form>
-        </div>
-      )}
     </section>
   );
 }

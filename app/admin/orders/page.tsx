@@ -51,6 +51,7 @@ function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${order.payment.paid ? "bg-[#cdfee1] text-[#0c5132]" : "bg-[#ffeb78] text-[#5e4200]"}`}>
               {order.payment.paid ? l({ en: "Paid", ar: "مدفوع" }) : l({ en: "Unpaid", ar: "غير مدفوع" })}
             </span>
+            <span className="rounded-full bg-[#ececec] px-2.5 py-1 text-xs font-semibold text-[#4a4a4a]">{order.payment.method === "cod" ? l({ en: "Cash on delivery", ar: "عند الاستلام" }) : order.payment.method === "instapay" ? "Instapay" : l({ en: "Wallet", ar: "محفظة" })}</span>
           </div>
           <button onClick={onClose} className="rounded-md p-2 hover:bg-black/5" aria-label={l({ en: "Close", ar: "إغلاق" })}><X className="h-5 w-5" /></button>
         </div>
@@ -92,12 +93,22 @@ function Detail({ id, onClose }: { id: string; onClose: () => void }) {
                 </li>
               ))}
               <li className="flex justify-between pt-3 text-[#616161]"><span>{l({ en: "Subtotal", ar: "المجموع" })}</span><bdi>{money(order.subtotal, lang)}</bdi></li>
+              {(order.payDiscount ?? 0) > 0 && <li className="flex justify-between pt-2 text-[#0c5132]"><span>{l({ en: "Instapay / wallet discount", ar: "خصم إنستاباي / محفظة" })}</span><bdi>-{money(order.payDiscount ?? 0, lang)}</bdi></li>}
               {order.discount && <li className="flex justify-between pt-2 text-[#0c5132]"><span>{l({ en: "Code", ar: "الكود" })} <bdi dir="ltr">{order.discount.code}</bdi></span><bdi>-{money(order.discount.amount, lang)}</bdi></li>}
               <li className="flex justify-between pt-2 text-[#616161]"><span>{l({ en: "Delivery", ar: "التوصيل" })}{order.shipping ? ` · ${order.shipping.label[lang]}` : ""}</span><bdi>{order.shipping ? (order.shipping.price ? money(order.shipping.price, lang) : l({ en: "Free", ar: "مجاني" })) : l({ en: "Not set", ar: "غير محدد" })}</bdi></li>
               <li className="flex justify-between pt-3 font-semibold"><span>{l({ en: "Total", ar: "الإجمالي" })}</span><bdi>{money(order.total, lang)}</bdi></li>
               {order.refunds.length > 0 && <li className="flex justify-between pt-2 text-[#8e0b21]"><span>{l({ en: "Refunded", ar: "المسترد" })}</span><bdi>-{money(order.refunds.reduce((a, r) => a + r.amount, 0), lang)}</bdi></li>}
             </ul>
           </section>
+
+          {order.gift && (
+            <section className={`${card} p-4 text-sm`}>
+              <h3 className="mb-2 text-sm font-semibold">{l({ en: "Gift: deliver to", ar: "هدية: التوصيل إلى" })}</h3>
+              <p className="font-medium">{order.gift.name}</p>
+              <p dir="ltr" className="text-start text-[#616161]">{order.gift.phone}</p>
+              {order.gift.message && <p className="mt-1 text-[#616161]">“{order.gift.message}”</p>}
+            </section>
+          )}
 
           <section className={`${card} grid gap-4 p-4 text-sm sm:grid-cols-2`}>
             <div>
