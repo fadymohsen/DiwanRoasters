@@ -87,7 +87,7 @@ export default function HeaderNav() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-ink/70 transition hover:text-green"
+              className="text-base font-semibold text-ink/85 transition hover:text-green"
             >
               {link.label}
             </Link>

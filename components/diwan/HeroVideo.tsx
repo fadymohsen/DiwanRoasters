@@ -76,16 +76,7 @@ export default function HeroVideo() {
 
       <div className="relative z-10 h-full">
         <div className="absolute inset-x-0 top-[max(10%,6rem)] flex flex-col items-start px-5 md:top-[22%] md:flex-row md:items-start md:justify-between md:px-20">
-          <motion.h1 {...rise(0.2)}>
-            <span className="sr-only">{l({ en: "DIWAN", ar: "ديوان" })}</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/assets/diwan/Diwan_Logo_Colour_tight.png"
-              alt=""
-              aria-hidden="true"
-              className="h-24 w-auto md:h-[clamp(9rem,32vh,19rem)] [@media(max-height:560px)]:h-14"
-            />
-          </motion.h1>
+          <h1 className="sr-only">{l({ en: "DIWAN", ar: "ديوان" })}</h1>
           <motion.p
             {...rise(0.35)}
             className="mt-3 font-arabic text-[clamp(1.35rem,6.4vw,1.9rem)] font-bold leading-tight text-aqeeq md:mt-0 md:w-[26vw] md:text-end md:text-[clamp(1.8rem,3.3vw,3.6rem)] [@media(max-height:560px)]:hidden"
@@ -98,7 +89,6 @@ export default function HeroVideo() {
           {...rise(0.5)}
           className="absolute inset-x-5 top-[max(37%,17.5rem)] max-w-sm md:bottom-16 md:end-auto md:start-20 md:top-auto md:max-w-md [@media(max-height:560px)]:top-[11.5rem]"
         >
-          <p className="mb-5 text-sm leading-relaxed text-n500 md:text-base">{l(t.hero.tagline)}</p>
           <Link
             href="/shop"
             className="inline-flex items-center gap-2.5 rounded-full bg-green px-6 py-3 text-xs font-semibold uppercase tracking-widest text-sandy shadow-lg transition hover:bg-green/90 active:scale-[0.97]"
