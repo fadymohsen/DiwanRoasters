@@ -75,19 +75,32 @@ export default function HeroVideo() {
       </div>
 
       <div className="relative z-10 h-full">
-        <div className="absolute inset-x-0 top-[max(10%,6rem)] flex flex-col items-start px-5 md:top-[22%] md:flex-row md:items-start md:justify-between md:px-20">
+        <div className="absolute inset-x-0 top-[max(22%,8rem)] flex flex-col items-start px-5 md:top-[22%] md:flex-row md:items-start md:justify-between md:px-20">
           <h1 className="sr-only">{l({ en: "DIWAN", ar: "ديوان" })}</h1>
-          <motion.p
-            {...rise(0.35)}
-            className="mt-3 font-arabic text-[clamp(1.35rem,6.4vw,1.9rem)] font-bold leading-tight text-aqeeq md:mt-0 md:w-[26vw] md:text-end md:text-[clamp(1.8rem,3.3vw,3.6rem)] [@media(max-height:560px)]:hidden"
-          >
-            {l({ en: "The story begins with a cup", ar: "الحكاية تبدأ بفنجان" })}
-          </motion.p>
+          {/* On mobile: headline + CTA stacked together. On desktop: headline and CTA are separate positioned elements. */}
+          <div className="flex flex-col items-start gap-7 md:contents">
+            <motion.p
+              {...rise(0.35)}
+              className="font-arabic text-[clamp(1.7rem,8vw,2.4rem)] font-bold leading-tight text-aqeeq md:w-[26vw] md:text-end md:text-[clamp(1.8rem,3.3vw,3.6rem)] [@media(max-height:560px)]:hidden"
+            >
+              {l({ en: "The story begins with a cup", ar: "الحكاية تبدأ بفنجان" })}
+            </motion.p>
+            <motion.div {...rise(0.5)} className="md:hidden">
+              <Link
+                href="/shop"
+                className="inline-flex items-center gap-2.5 rounded-full bg-green px-6 py-3 text-sm font-semibold uppercase tracking-widest text-sandy shadow-lg transition hover:bg-green/90 active:scale-[0.97]"
+              >
+                <span>{l(t.hero.shopNow)}</span>
+                <ArrowRight className="h-4 w-4 rtl:-scale-x-100" />
+              </Link>
+            </motion.div>
+          </div>
         </div>
 
+        {/* Desktop-only CTA */}
         <motion.div
           {...rise(0.5)}
-          className="absolute inset-x-5 top-[max(37%,17.5rem)] max-w-sm md:bottom-16 md:end-auto md:start-20 md:top-auto md:max-w-md [@media(max-height:560px)]:top-[11.5rem]"
+          className="absolute hidden md:block md:bottom-16 md:end-auto md:start-20 md:max-w-md"
         >
           <Link
             href="/shop"
