@@ -75,7 +75,7 @@ export default function HeroVideo() {
 
       <div className="relative z-10 h-full">
         {/* Title + description + CTA: mobile stacked, desktop grouped on the right */}
-        <div className="absolute inset-x-0 top-[max(22%,8rem)] flex flex-col items-start rtl:items-end px-5 md:top-[22%] md:flex-row md:items-start md:justify-end md:px-20">
+        <div className="absolute inset-x-0 top-[max(13%,4.5rem)] flex flex-col items-start rtl:items-end px-5 md:top-[22%] md:flex-row md:items-start md:justify-end md:px-20">
           <h1 className="sr-only">{l({ en: "DIWAN", ar: "ديوان" })}</h1>
           <div className="flex flex-col items-start gap-5 rtl:items-end md:items-end md:max-w-[38vw]">
             <motion.p
