@@ -1,12 +1,9 @@
 "use client";
 
 import Link from "@/components/ui/LocLink";
-import { ArrowUpRight } from "lucide-react";
-import Reveal from "@/components/ui/Reveal";
-import { Magnetic, SplitText } from "@/components/ui/motion";
 import { FacebookIcon, InstagramIcon, TikTokIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
 import { SITE, waLink } from "@/lib/site";
-import { CATEGORY_IDS, CATEGORY_META, CLOSING_LINE } from "@/data/products";
+import { CATEGORY_IDS, CATEGORY_META } from "@/data/products";
 import { useLangStore, useLocalized } from "@/lib/i18n";
 import { useCatalogStore } from "@/store/useCatalogStore";
 
@@ -28,18 +25,7 @@ export default function Footer() {
   return (
     <footer className="bg-green text-sandy">
       <div className="mx-auto max-w-[1440px] px-5 pb-8 pt-20 md:px-20">
-        <Reveal>
-          <SplitText as="p" text={CLOSING_LINE[lang]} className="block max-w-3xl font-editorial text-3xl font-medium leading-snug md:text-5xl" />
-          <Magnetic className="mt-8 inline-block"><Link
-            href="/shop"
-            className="inline-flex items-center gap-2 rounded-full bg-sandy px-7 py-3.5 text-xs font-bold uppercase tracking-widest text-green transition hover:bg-white active:scale-[0.97]"
-          >
-            {l({ en: "Shop the nine blends", ar: "تسوق التوليفات التسع" })}
-            <ArrowUpRight className="h-4 w-4 rtl:-scale-x-100" />
-          </Link></Magnetic>
-        </Reveal>
-
-        <div className="mt-16 grid gap-12 border-t border-sandy/15 pt-12 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-12 border-t border-sandy/15 pt-12 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/assets/diwan/Diwan_Logo_Slogan_Reverse_tight.png" alt={l({ en: "DIWAN, the story begins with a cup", ar: "ديوان، الحكاية تبدأ بفنجان" })} className="w-32" />
