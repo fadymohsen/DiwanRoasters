@@ -3,7 +3,6 @@
 import Brewing from "./Brewing";
 import { Categories } from "./Categories";
 import { Business } from "./Business";
-import { Story, Behind } from "./Sections";
 
 /** The DIWAN brand material, shown below the scroll scene. */
 export default function DiwanSections() {
@@ -12,8 +11,6 @@ export default function DiwanSections() {
       <Categories />
       <div className="arch-band" aria-hidden="true" />
       <Brewing />
-      <Story />
-      <Behind />
       <Business />
     </div>
   );
