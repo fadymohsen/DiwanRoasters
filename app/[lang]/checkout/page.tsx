@@ -211,7 +211,6 @@ export default function CheckoutPage() {
                       <div className="space-y-3">
                         {([
                           { id: "cod", t: { en: "Cash on delivery", ar: "الدفع عند الاستلام" }, d: { en: "Pay the courier when your order arrives.", ar: "تدفع للمندوب عند وصول الطلب." }, off: false },
-                          { id: "instapay", t: { en: "Instapay", ar: "إنستاباي" }, d: { en: "Transfer with Instapay.", ar: "حوّل عبر إنستاباي." }, off: true },
                           { id: "wallet", t: { en: "Mobile wallet", ar: "محفظة إلكترونية" }, d: { en: "Transfer from a mobile wallet.", ar: "حوّل من محفظة إلكترونية." }, off: true },
                         ] as { id: PayMethod; t: { en: string; ar: string }; d: { en: string; ar: string }; off: boolean }[]).map((m) => (
                           <label key={m.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 bg-n100 p-4 transition ${payMethod === m.id ? "border-green" : "border-n300 hover:border-green/50"}`}>
