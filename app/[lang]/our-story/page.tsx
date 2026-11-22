@@ -114,11 +114,17 @@ export default function OurStoryPage() {
       </section>
 
       <Chapter
-        title={l({ en: "A diwan is where people sit", ar: "الديوان هو غرفة الضيوف" })}
+        title={l({ en: "The story begins with the bean", ar: "الحكاية بتبدأ من حبة البن" })}
         body={
           <>
-            <p>{l({ en: "In Egyptian homes the diwan is the room kept for guests. Someone always puts the kettle on before anyone asks.", ar: "في البيوت المصرية القديمة، الديوان هو الغرفة التي يجلس فيها الضيوف. وهناك دائماً من يضع الركوة على النار قبل أن يطلب أحد." })}</p>
-            <p>{l({ en: "We took that feeling and put it into a pouch of coffee you can open on an ordinary morning.", ar: "حملنا هذا الإحساس إلى كيس قهوة تفتحه في أي صباح." })}</p>
+            <p>{l({
+              en: "At DIWAN, we believe that great coffee starts with selecting the bean itself. That's why we carefully choose our coffee crops and pay close attention to every roasting detail until we reach the taste we're after. We always strive to maintain consistent quality from cup to cup.",
+              ar: "في ديوان، بنؤمن إن القهوة المميزة بتبدأ من اختيار البن نفسه. عشان كده بنختار محاصيل البن بعناية، وبنهتم بأدق تفاصيل التحميص لحد ما نوصل للطعم اللي بندور عليه. وبنسعى دايمًا للحفاظ على ثبات الجودة من فنجان للتاني.",
+            })}</p>
+            <p>{l({
+              en: "We drew our name from the diwan — the place that used to bring people together for conversation, company and stories. At DIWAN, we believe coffee is not one taste or one method; every person has their own taste, and every gathering has its story.",
+              ar: "استوحينا اسمنا من الديوان، المكان اللي كان بيجمع الناس على القعدة واللمة والحكايات. وفي ديوان بنؤمن إن القهوة مش طعم واحد ولا طريقة واحدة؛ لكل شخص ذوقه، ولكل قعدة حكايتها.",
+            })}</p>
           </>
         }
         media={<Parallax src={`${P}/friends-majlis.webp`} alt={l({ en: "Four friends sharing coffee in a majlis", ar: "أربعة أصدقاء يتشاركون القهوة في مجلس" })} className="aspect-[4/3] rounded-[14px]" />}
@@ -198,18 +204,6 @@ export default function OurStoryPage() {
             ))}
           </ul>
         </div>
-      </section>
-
-      {/* The box */}
-      <section className="relative overflow-hidden">
-        <Parallax src={`${P}/unboxing-flatlay.webp`} alt={l({ en: "The DIWAN box open on a table: a card, a pouch and a wax-sealed tissue paper", ar: "بوكس ديوان مفتوح على طاولة: كارت وكيس وورق زبدة بختم شمعي" })} className="h-[70svh] min-h-[28rem]" speed={90} />
-        <div className="absolute inset-0 bg-gradient-to-t from-green/90 via-green/30 to-transparent" aria-hidden="true" />
-        <Reveal className="absolute inset-x-0 bottom-0">
-          <div className="mx-auto max-w-[1320px] px-5 pb-12 md:px-12 md:pb-16">
-            <h2 className="max-w-2xl font-editorial text-4xl font-semibold leading-tight text-sandy md:text-6xl">{l({ en: "Every order opens like a story", ar: "كل طلب يصلك في بوكس" })}</h2>
-            <Link href="/#unboxing" className="mt-6 inline-flex rounded-full bg-sandy px-7 py-3.5 text-sm font-semibold text-green transition hover:bg-white active:scale-[0.97]">{l({ en: "See how it opens", ar: "شاهد فتح البوكس" })}</Link>
-          </div>
-        </Reveal>
       </section>
 
       {/* What's next */}

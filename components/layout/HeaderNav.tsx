@@ -49,11 +49,10 @@ export default function HeaderNav() {
   const l = useLocalized();
 
   const NAV_LINKS = [
-    { href: "/shop", label: l(t.shop) },
-    { href: "/our-story", label: l(t.ourStory) },
-    { href: "/#blends", label: l({ en: "The Nine Blends", ar: "التوليفات التسع" }) },
-    { href: "/#brew", label: l({ en: "Brewing", ar: "التحضير" }) },
-    { href: "/#business", label: l({ en: "For business", ar: "للأعمال" }) },
+    { href: "/shop", label: l({ en: "Our Products", ar: "منتجاتنا" }) },
+    { href: "/#brew", label: l({ en: "Brewing Guide", ar: "دليل التحضير" }) },
+    { href: "/#business", label: l({ en: "For Business", ar: "للأعمال" }) },
+    { href: "/our-story", label: l({ en: "Our Story", ar: "حكايتنا" }) },
     { href: "/contact", label: l({ en: "Contact", ar: "تواصل معنا" }) },
   ];
 

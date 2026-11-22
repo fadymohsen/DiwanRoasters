@@ -165,6 +165,13 @@ export default function ProductView({ id }: { id: string }) {
             <p className="mt-5 max-w-md text-base leading-relaxed text-n500">{copy}</p>
 
             <div className="mt-6">{price}</div>
+            {variant && (() => {
+              const brewGrams: Record<string, number> = { turkish: 8, espresso: 18, flavored: 10 };
+              const g = brewGrams[item.categoryId];
+              if (!g) return null;
+              const cost = Math.round((variant.price / 200) * g);
+              return <p className="mt-1 text-sm text-n500">{ar ? `≈ ${cost} جنيه · تكلفة البن في الفنجان` : `≈ EGP ${cost} · coffee cost per cup`}</p>;
+            })()}
             {variant && isLow(variant) && <p className="mt-1 text-sm font-medium text-[#9A6B12]">{l({ en: `Only ${variant.stock} left`, ar: `متبقي ${variant.stock} فقط` })}</p>}
             {!available && <p className="mt-1 text-sm font-medium text-[#A8322F]">{l({ en: "Currently unavailable", ar: "غير متوفر حالياً" })}</p>}
 

@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, ChevronDown } from "lucide-react";
-import Link from "@/components/ui/LocLink";
 import { useLocalized, translations } from "@/lib/i18n";
 
 const FPS = 24;
@@ -75,41 +74,36 @@ export default function HeroVideo() {
       </div>
 
       <div className="relative z-10 h-full">
-        <div className="absolute inset-x-0 top-[max(22%,8rem)] flex flex-col items-start px-5 md:top-[22%] md:flex-row md:items-start md:justify-between md:px-20">
+        {/* Title + description + CTA: mobile stacked, desktop grouped on the right */}
+        <div className="absolute inset-x-0 top-[max(22%,8rem)] flex flex-col items-start px-5 md:top-[22%] md:flex-row md:items-start md:justify-end md:px-20">
           <h1 className="sr-only">{l({ en: "DIWAN", ar: "ديوان" })}</h1>
-          {/* On mobile: headline + CTA stacked together. On desktop: headline and CTA are separate positioned elements. */}
-          <div className="flex flex-col items-start gap-7 md:contents">
+          <div className="flex flex-col items-start gap-5 md:items-end md:max-w-[38vw]">
             <motion.p
-              {...rise(0.35)}
-              className="font-arabic text-[clamp(1.7rem,8vw,2.4rem)] font-bold leading-tight text-aqeeq md:w-[26vw] md:text-end md:text-[clamp(1.8rem,3.3vw,3.6rem)] [@media(max-height:560px)]:hidden"
+              {...rise(0.3)}
+              className="font-arabic text-[clamp(1.7rem,8vw,2.4rem)] font-bold leading-tight text-green md:text-end md:text-[clamp(1.8rem,3.3vw,3.6rem)] [@media(max-height:560px)]:hidden"
             >
               {l({ en: "The story begins with a cup", ar: "الحكاية تبدأ بفنجان" })}
             </motion.p>
-            <motion.div {...rise(0.5)} className="md:hidden">
-              <Link
-                href="/shop"
+            <motion.p
+              {...rise(0.45)}
+              className="max-w-sm text-sm leading-relaxed text-ink md:text-end md:text-base [@media(max-height:560px)]:hidden"
+            >
+              {l({
+                en: "At DIWAN, we believe everyone has their own taste in coffee. That's why we offer different blends for you to choose the one that suits you.",
+                ar: "في ديوان، بنؤمن إن لكل واحد ذوقه في القهوة. وعشان كده بنقدملك أنواع مختلفة، تختار منها اللي على مزاجك.",
+              })}
+            </motion.p>
+            <motion.div {...rise(0.6)}>
+              <button
+                onClick={() => document.getElementById("categories")?.scrollIntoView({ behavior: "smooth" })}
                 className="inline-flex items-center gap-2.5 rounded-full bg-green px-6 py-3 text-sm font-semibold uppercase tracking-widest text-sandy shadow-lg transition hover:bg-green/90 active:scale-[0.97]"
               >
-                <span>{l(t.hero.shopNow)}</span>
+                <span>{l({ en: "Choose Your Coffee", ar: "اختار قهوتك" })}</span>
                 <ArrowRight className="h-4 w-4 rtl:-scale-x-100" />
-              </Link>
+              </button>
             </motion.div>
           </div>
         </div>
-
-        {/* Desktop-only CTA */}
-        <motion.div
-          {...rise(0.5)}
-          className="absolute hidden md:block md:bottom-16 md:end-auto md:start-20 md:max-w-md"
-        >
-          <Link
-            href="/shop"
-            className="inline-flex items-center gap-2.5 rounded-full bg-green px-6 py-3 text-xs font-semibold uppercase tracking-widest text-sandy shadow-lg transition hover:bg-green/90 active:scale-[0.97]"
-          >
-            <span>{l(t.hero.shopNow)}</span>
-            <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
-          </Link>
-        </motion.div>
 
         <motion.button
           {...rise(0.9)}

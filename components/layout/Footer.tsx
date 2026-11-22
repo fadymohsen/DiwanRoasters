@@ -59,7 +59,7 @@ export default function Footer() {
                   <Link href={`/shop?category=${c}`} className={link}>{CATEGORY_META[c].label[lang]}</Link>
                 </li>
               ))}
-              <li><Link href="/shop" className={link}>{l({ en: "All blends", ar: "كل التوليفات" })}</Link></li>
+              <li><Link href="/gift-box" className={link}>{l({ en: "Gift Box", ar: "بوكس الهدايا" })}</Link></li>
             </ul>
           </nav>
 
@@ -67,7 +67,8 @@ export default function Footer() {
             <h3 className={col}>DIWAN</h3>
             <ul className="space-y-3">
               <li><Link href="/our-story" className={link}>{l({ en: "Our Story", ar: "حكايتنا" })}</Link></li>
-              <li><Link href="/#brew" className={link}>{l({ en: "Brewing guide", ar: "دليل التحضير" })}</Link></li>
+              <li><Link href="/#brew" className={link}>{l({ en: "Brewing Guide", ar: "دليل التحضير" })}</Link></li>
+              <li><Link href="/#business" className={link}>{l({ en: "For Business", ar: "للأعمال" })}</Link></li>
               <li><Link href="/contact" className={link}>{l({ en: "Contact", ar: "تواصل معنا" })}</Link></li>
             </ul>
           </nav>

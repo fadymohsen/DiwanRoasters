@@ -39,8 +39,6 @@ export default function CheckoutPage() {
   const lang = useLangStore((s) => s.lang);
   const setPayMethod = useShopStore((s) => s.setPayMethod);
   const gift = useShopStore((s) => s.gift);
-  const setGift = useShopStore((s) => s.setGift);
-  const [giftTouched, setGiftTouched] = useState(false);
   const promoCode = useShopStore((s) => s.promo);
   const setShipCity = useShopStore((s) => s.setShipCity);
   const hydrated = useBagReady();
@@ -73,7 +71,6 @@ export default function CheckoutPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setTouched({ name: true, phone: true, email: true, city: true, address: true });
-    setGiftTouched(true);
     if (!valid || blocked || lines.length === 0) {
       // send the keyboard to the first field that needs attention
       window.setTimeout(() => document.querySelector<HTMLElement>('form [aria-invalid="true"]')?.focus(), 0);
@@ -178,32 +175,6 @@ export default function CheckoutPage() {
                           </Field>
                         </div>
                       </div>
-                    </fieldset>
-
-                    <fieldset>
-                      <legend className="mb-1 font-editorial text-2xl font-semibold text-green">{l({ en: "Gift", ar: "هدية" })}</legend>
-                      <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-n300 bg-n100 p-4 transition has-[:checked]:border-green has-[:checked]:bg-green/5">
-                        <input type="checkbox" checked={gift.on} onChange={(e) => setGift({ on: e.target.checked })} className="mt-1 h-4 w-4 accent-[#0E3A33]" />
-                        <span>
-                          <span className="block font-semibold text-green">{l({ en: "This order is a gift", ar: "هذا الطلب هدية" })}</span>
-                          <span className="text-sm text-n500">{l({ en: "We deliver it to the person you name, and we call them to arrange it.", ar: "نوصله إلى الشخص الذي تكتب اسمه، ونتصل به لترتيب التوصيل." })}</span>
-                        </span>
-                      </label>
-                      {gift.on && (
-                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                          <Field id="g-name" label={l({ en: "Receiver's name", ar: "اسم المُستلِم" })} error={giftTouched ? giftErrors.name : undefined}>
-                            <input id="g-name" value={gift.name} onChange={(e) => setGift({ name: e.target.value })} aria-invalid={!!(giftTouched && giftErrors.name)} aria-describedby={giftTouched && giftErrors.name ? "g-name-err" : undefined} className={inputCls(!!(giftTouched && giftErrors.name))} />
-                          </Field>
-                          <Field id="g-phone" label={l({ en: "Receiver's phone", ar: "هاتف المُستلِم" })} error={giftTouched ? giftErrors.phone : undefined}>
-                            <input id="g-phone" value={gift.phone} onChange={(e) => setGift({ phone: e.target.value })} type="tel" dir="ltr" inputMode="tel" aria-invalid={!!(giftTouched && giftErrors.phone)} aria-describedby={giftTouched && giftErrors.phone ? "g-phone-err" : undefined} className={inputCls(!!(giftTouched && giftErrors.phone))} />
-                          </Field>
-                          <div className="sm:col-span-2">
-                            <Field id="g-msg" label={l({ en: "Message on the card (optional)", ar: "رسالة على الكارت (اختياري)" })}>
-                              <textarea id="g-msg" rows={2} value={gift.message} onChange={(e) => setGift({ message: e.target.value })} className={inputCls(false)} />
-                            </Field>
-                          </div>
-                        </div>
-                      )}
                     </fieldset>
 
                     <fieldset>

@@ -26,6 +26,7 @@ export const PAGES: Record<string, Entry> = {
   },
   "/cart": { title: { en: "Your bag", ar: "سلتك" }, description: { en: "Review the blends in your bag.", ar: "راجع التوليفات في سلتك." } },
   "/checkout": { title: { en: "Checkout", ar: "إتمام الطلب" }, description: { en: "Place your order.", ar: "أكمل طلبك." } },
+  "/gift-box": { title: { en: "Gift Box", ar: "بوكس الهدايا" }, description: { en: "DIWAN gift boxes, coming soon.", ar: "بوكسات هدايا ديوان، قريباً." } },
 };
 
 const PRIVATE = new Set(["/cart", "/checkout"]);

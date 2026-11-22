@@ -64,6 +64,17 @@ function ShopCard({ item }: { item: CatalogItem }) {
               <span className="text-lg font-bold text-green"><bdi>{money(variant.price, lang)}</bdi></span>
               {variant.compareAt && variant.compareAt > variant.price && <span className="text-xs text-n400 line-through"><bdi>{money(variant.compareAt, lang)}</bdi></span>}
             </div>
+            {(() => {
+              const brewGrams: Record<string, number> = { turkish: 8, espresso: 18, flavored: 10 };
+              const g = brewGrams[item.categoryId];
+              if (!g) return null;
+              const cost = Math.round((variant.price / 200) * g);
+              return (
+                <div className="mt-0.5 text-[11px] text-n500">
+                  {lang === "ar" ? `≈ ${cost} جنيه · تكلفة البن في الفنجان` : `≈ EGP ${cost} · per cup`}
+                </div>
+              );
+            })()}
             <div className="text-[11px] text-n400">
               {isLow(variant) ? <span className="font-medium text-[#9A6B12]">{l({ en: `${variant.stock} left`, ar: `متبقي ${variant.stock}` })}</span> : l({ en: "200 g pack", ar: "عبوة 200 جم" })}
             </div>
@@ -149,27 +160,6 @@ export default function ShopPage() {
             {filter !== "all" && <button onClick={() => setFilter("all")} className="btn btn-ghost mt-4">{l({ en: "Show all", ar: "عرض الكل" })}</button>}
           </div>
         )}
-      </section>
-
-      <section className="mx-auto max-w-[1440px] px-5 pb-24 md:px-20">
-        <Reveal>
-          <div className="grid overflow-hidden rounded-[14px] bg-green text-sandy md:grid-cols-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/diwan/photo/unboxing-flatlay.webp" alt={l({ en: "The DIWAN box, opened", ar: "بوكس ديوان مفتوح" })} loading="lazy" className="h-64 w-full object-cover md:h-full" />
-            <div className="flex flex-col justify-center gap-4 p-8 md:p-12">
-              <h2 className="font-editorial text-3xl font-semibold md:text-4xl">{l({ en: "Every order opens like a story", ar: "كل طلب يصلك في بوكس" })}</h2>
-              <p className="text-sm leading-relaxed text-sandy/80">
-                {l({
-                  en: "A sealed box, tissue paper with a wax seal, the card for your blend and the white pouch.",
-                  ar: "بوكس بختم، وورق زبدة بختم شمعي، وكارت توليفتك، والكيس الأبيض.",
-                })}
-              </p>
-              <Link href="/#unboxing" className="inline-flex w-fit items-center rounded-full border border-sandy/60 px-6 py-3 text-xs font-bold uppercase tracking-widest transition hover:bg-sandy hover:text-green active:scale-[0.97]">
-                {l({ en: "See the unboxing", ar: "شاهد فتح البوكس" })}
-              </Link>
-            </div>
-          </div>
-        </Reveal>
       </section>
 
       <Footer />
