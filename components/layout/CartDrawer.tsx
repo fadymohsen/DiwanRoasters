@@ -112,9 +112,15 @@ export default function CartDrawer() {
                 >
                   {l({ en: "Checkout", ar: "إتمام الطلب" })}
                 </Link>
-                <Link href="/cart" onClick={close} className="mt-3 block text-center text-sm font-medium text-green underline-offset-4 hover:underline">
-                  {l({ en: "View full bag", ar: "عرض السلة كاملة" })}
-                </Link>
+                <div className="mt-3 flex items-center justify-center gap-4 text-sm font-medium text-green">
+                  <button onClick={close} className="underline-offset-4 hover:underline">
+                    {l({ en: "Continue shopping", ar: "متابعة التسوق" })}
+                  </button>
+                  <span aria-hidden="true" className="text-n300">·</span>
+                  <Link href="/cart" onClick={close} className="underline-offset-4 hover:underline">
+                    {l({ en: "View full bag", ar: "عرض السلة كاملة" })}
+                  </Link>
+                </div>
               </div>
             )}
           </motion.aside>
