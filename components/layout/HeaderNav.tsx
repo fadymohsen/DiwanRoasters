@@ -37,12 +37,7 @@ export default function HeaderNav() {
   }, []);
   useEffect(() => {
     const check = () => {
-      if (!/^\/(en|ar)\/?$/.test(pathname)) {
-        setSolid(window.scrollY > 24 || !!document.querySelector("[data-header-solid]"));
-        return;
-      }
-      const el = document.querySelector(".diwan");
-      setSolid(!!el && el.getBoundingClientRect().top <= 72);
+      setSolid(window.scrollY > 24 || !!document.querySelector("[data-header-solid]"));
     };
     check();
     window.addEventListener("scroll", check, { passive: true });
