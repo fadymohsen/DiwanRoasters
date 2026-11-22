@@ -48,7 +48,7 @@ export function pageMeta(lang: Locale, path: string): Metadata {
       canonical: `/${lang}${path}`,
       languages: { en: `/en${path}`, ar: `/ar${path}`, "x-default": `/en${path}` },
     },
-    openGraph: { title: e.title[lang], description: e.description[lang], locale: lang === "ar" ? "ar_EG" : "en_US", url: `/${lang}${path}` },
+    openGraph: { title: e.title[lang], description: e.description[lang], locale: lang === "ar" ? "ar_EG" : "en_US", url: `/${lang}${path}`, images: ["/assets/diwan/Diwan_OpenGraph_Green_1200x630.png"] },
     robots: PRIVATE.has(path) ? { index: false, follow: false } : undefined,
   };
 }
