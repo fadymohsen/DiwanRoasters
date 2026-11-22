@@ -2,7 +2,6 @@
 
 import Brewing from "./Brewing";
 import { Categories } from "./Categories";
-import { Featured } from "./Featured";
 import { Business } from "./Business";
 import { Story, Behind } from "./Sections";
 
@@ -11,7 +10,6 @@ export default function DiwanSections() {
   return (
     <div className="diwan">
       <Categories />
-      <Featured />
       <div className="arch-band" aria-hidden="true" />
       <Brewing />
       <Story />

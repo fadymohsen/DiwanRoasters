@@ -2,37 +2,15 @@
 
 import { useRef, type ReactNode } from "react";
 import Link from "@/components/ui/LocLink";
-import { motion, useScroll, useTransform, type MotionValue } from "motion/react";
+import { motion, useScroll, useTransform } from "motion/react";
 import HeaderNav from "@/components/layout/HeaderNav";
 import CartDrawer from "@/components/layout/CartDrawer";
 import Footer from "@/components/layout/Footer";
 import Reveal from "@/components/ui/Reveal";
 import { Magnetic, SplitText } from "@/components/ui/motion";
-import { BRAND_STORY } from "@/data/products";
 import { useLangStore, useLocalized } from "@/lib/i18n";
 
 const P = "/assets/diwan/photo";
-
-/** Each word lights up as the reader scrolls through the statement. */
-function Word({ children, range, progress }: { children: string; range: [number, number]; progress: MotionValue<number> }) {
-  const opacity = useTransform(progress, range, [0.16, 1]);
-  return <motion.span style={{ opacity }} className="inline-block">{children}&nbsp;</motion.span>;
-}
-
-function Statement({ text }: { text: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.85", "end 0.4"] });
-  const words = text.split(/\s+/);
-  return (
-    <div ref={ref}>
-      <p className="font-editorial text-[clamp(1.75rem,4.6vw,3.75rem)] font-medium leading-[1.35] text-green">
-        {words.map((w, i) => (
-          <Word key={i} progress={scrollYProgress} range={[i / words.length, Math.min(1, (i + 1.5) / words.length)]}>{w}</Word>
-        ))}
-      </p>
-    </div>
-  );
-}
 
 function Parallax({ src, alt, className = "", speed = 60 }: { src: string; alt: string; className?: string; speed?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -104,13 +82,6 @@ export default function OurStoryPage() {
             {l({ en: "DIWAN is a Cairo roastery built on one idea: coffee is a reason to sit together.", ar: "ديوان محمصة قهوة في القاهرة. نؤمن أن الفنجان أجمل حين يجتمع حوله الناس." })}
           </p>
         </motion.div>
-      </section>
-
-      {/* The statement */}
-      <section className="mx-auto max-w-[1100px] px-5 py-28 md:px-12 md:py-44">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/assets/diwan/Diwan_Arch_Green_tight.png" alt="" aria-hidden="true" className="mb-10 h-12 w-auto" />
-        <Statement text={BRAND_STORY[lang]} />
       </section>
 
       <Chapter
