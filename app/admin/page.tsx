@@ -7,7 +7,7 @@ import { PageHead, btnLight, card } from "@/components/admin/AdminShell";
 import { AreaChart, Bar } from "@/components/admin/charts";
 import { STATUSES } from "@/components/admin/orderMeta";
 import { isLow, useCatalogStore, type Order } from "@/store/useCatalogStore";
-import { CATEGORY_META } from "@/data/products";
+import { categoryName } from "@/lib/catalog";
 import { downloadCsv } from "@/lib/csv";
 import { useLangStore, useLocalized } from "@/lib/i18n";
 import { money } from "@/lib/format";
@@ -36,6 +36,7 @@ export default function AdminOverview() {
   const orders = useCatalogStore((s) => s.orders);
   const items = useCatalogStore((s) => s.items);
   const messages = useCatalogStore((s) => s.messages);
+  const categories = useCatalogStore((s) => s.categories);
   const markRead = useCatalogStore((s) => s.markMessageRead);
   const [range, setRange] = useState<Range>(30);
 
@@ -68,7 +69,7 @@ export default function AdminOverview() {
     );
     const top = [...sold.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 6);
 
-    const byCat = (Object.keys(CATEGORY_META) as (keyof typeof CATEGORY_META)[]).map((c) => {
+    const byCat = categories.map((cat) => cat.id).map((c) => {
       const ids = items.filter((i) => i.categoryId === c).map((i) => i.id);
       const revenue = cur.reduce((a, o) => a + o.lines.filter((ln) => ids.includes(ln.key.split(":")[0])).reduce((x, ln) => x + ln.qty * ln.price, 0), 0);
       return { c, revenue };
@@ -95,7 +96,7 @@ export default function AdminOverview() {
       series, top, byCat, customers, returning, stockValue, retailValue, low, funnel, collected: sum(paid), unpaidDelivered,
       pending: orders.filter((o) => o.status === "new").length,
     };
-  }, [orders, items, range, today]);
+  }, [orders, items, categories, range, today]);
 
   const fmtDay = (t: number) => new Intl.DateTimeFormat(lang === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "short" }).format(t);
   const maxTop = Math.max(1, ...s.top.map((t) => t.revenue));
@@ -198,7 +199,7 @@ export default function AdminOverview() {
           <ul className="mt-4 space-y-3.5">
             {s.byCat.map((c) => (
               <li key={c.c}>
-                <div className="mb-1 flex justify-between text-sm"><span>{CATEGORY_META[c.c].label[lang]}</span><bdi className="font-semibold">{money(c.revenue, lang)}</bdi></div>
+                <div className="mb-1 flex justify-between text-sm"><span>{categoryName(categories, c.c, lang)}</span><bdi className="font-semibold">{money(c.revenue, lang)}</bdi></div>
                 <Bar value={c.revenue} max={maxCat} />
               </li>
             ))}

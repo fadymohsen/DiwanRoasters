@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { PRODUCTS } from "@/data/products";
 import { SITE, type Locale } from "@/lib/site";
 
 type Bi = { en: string; ar: string };
@@ -7,14 +6,14 @@ interface Entry { title: Bi; description: Bi }
 
 const HOME: Entry = {
   title: { en: "DIWAN ديوان | Coffee for every culture", ar: "ديوان | قهوة لكل ثقافة" },
-  description: { en: "Cairo coffee roastery. Nine blends: Turkish, espresso and flavored.", ar: "محمصة قهوة في القاهرة. تسع توليفات: تركي وإسبريسو ومنكهة." },
+  description: { en: "Cairo coffee roastery. Turkish, espresso and flavored blends.", ar: "محمصة قهوة في القاهرة. توليفات تركي وإسبريسو ومنكهة." },
 };
 
 export const PAGES: Record<string, Entry> = {
   "": HOME,
   "/shop": {
     title: { en: "Our products", ar: "منتجاتنا" },
-    description: { en: "Nine coffee blends, 200 g each, in Egyptian pounds.", ar: "تسع توليفات قهوة، كل عبوة 200 جم، بالجنيه المصري." },
+    description: { en: "DIWAN coffee blends, in Egyptian pounds.", ar: "توليفات قهوة ديوان، بالجنيه المصري." },
   },
   "/our-story": {
     title: { en: "Our story", ar: "حكايتنا" },
@@ -31,14 +30,9 @@ export const PAGES: Record<string, Entry> = {
 
 const PRIVATE = new Set(["/cart", "/checkout"]);
 
-/** Title, description, canonical and per-language alternates for one page. */
-export function pageMeta(lang: Locale, path: string): Metadata {
-  const e = path.startsWith("/shop/")
-    ? (() => {
-        const p = PRODUCTS.find((x) => x.id === path.slice(6));
-        return p ? { title: { en: p.nameEn, ar: p.name }, description: { en: p.copyEn.slice(0, 150), ar: p.copy.slice(0, 150) } } : null;
-      })()
-    : PAGES[path];
+/** Title, description, canonical and per-language alternates for one page. A product page passes its own entry. */
+export function pageMeta(lang: Locale, path: string, productEntry?: Entry | null): Metadata {
+  const e = path.startsWith("/shop/") ? productEntry : PAGES[path];
   if (!e) return {};
   const home = path === "";
   const product = path.startsWith("/shop/");

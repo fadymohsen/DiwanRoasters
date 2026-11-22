@@ -3,7 +3,6 @@
 import Link from "@/components/ui/LocLink";
 import { FacebookIcon, InstagramIcon, TikTokIcon, WhatsAppIcon } from "@/components/ui/SocialIcons";
 import { SITE, waLink } from "@/lib/site";
-import { CATEGORY_IDS, CATEGORY_META } from "@/data/products";
 import { useLangStore, useLocalized } from "@/lib/i18n";
 import { useCatalogStore } from "@/store/useCatalogStore";
 
@@ -18,6 +17,7 @@ export default function Footer() {
   const l = useLocalized();
   const lang = useLangStore((s) => s.lang);
   const settings = useCatalogStore((s) => s.settings);
+  const categories = useCatalogStore((s) => s.categories);
 
   const col = "mb-4 text-[11px] font-bold uppercase tracking-[0.22em] text-sandy/70";
   const link = "group inline-flex items-center gap-1 text-sm text-sandy/80 transition hover:text-sandy";
@@ -40,9 +40,9 @@ export default function Footer() {
           <nav aria-label={l({ en: "Shop", ar: "منتجاتنا" })}>
             <h3 className={col}>{l({ en: "Shop", ar: "منتجاتنا" })}</h3>
             <ul className="space-y-3">
-              {CATEGORY_IDS.map((c) => (
-                <li key={c}>
-                  <Link href={`/shop?category=${c}`} className={link}>{CATEGORY_META[c].label[lang]}</Link>
+              {categories.map((c) => (
+                <li key={c.id}>
+                  <Link href={`/shop?category=${c.id}`} className={link}>{c.name[lang]}</Link>
                 </li>
               ))}
               <li><Link href="/gift-box" className={link}>{l({ en: "Gift Box", ar: "بوكس الهدايا" })}</Link></li>

@@ -1,15 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CATEGORY_META, ROAST_EN, SLOGAN, SPICE_EN, type Product, type Roast, type Spice } from "@/data/products";
+import { ROAST_EN, SLOGAN, SPICE_EN, type Product, type Roast, type Spice } from "@/data/products";
 import { useLangStore } from "@/lib/i18n";
+import { useCatalogStore } from "@/store/useCatalogStore";
+import { categoryName } from "@/lib/catalog";
 import CardArt from "./CardArt";
 
 const DARK = new Set(["ons", "zad", "tayf", "layl", "chocolate"]);
 
-function logoFor(id: string) {
-  if (id === "fransawy") return "/assets/diwan/Diwan_Logo_Colour_tight.png";
-  if (DARK.has(id)) return "/assets/diwan/Diwan_Logo_Reverse_tight.png";
+/** 0 (black) to 1 (white) */
+function lightness(hex: string) {
+  const n = parseInt(hex.slice(1), 16);
+  return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+}
+/** The nine launch cards keep their hand-picked treatment; cards added later are judged by their colour. */
+const KNOWN = new Set(["ons", "murad", "mazaj", "zad", "tayf", "layl", "fransawy", "bondok", "chocolate"]);
+const isLightCard = (id: string, hex: string) => (KNOWN.has(id) ? id === "fransawy" : lightness(hex) > 0.6);
+
+function logoFor(id: string, hex: string) {
+  if (isLightCard(id, hex)) return "/assets/diwan/Diwan_Logo_Colour_tight.png";
+  if (DARK.has(id) || (!KNOWN.has(id) && lightness(hex) < 0.4)) return "/assets/diwan/Diwan_Logo_Reverse_tight.png";
   return "/assets/diwan/Diwan_Logo_Mono_Sand_tight.png";
 }
 
@@ -44,6 +55,8 @@ export default function ProductCard({
 }) {
   const lang = useLangStore((s) => s.lang);
   const ar = lang === "ar";
+  const categories = useCatalogStore((st) => st.categories);
+  const catLabel = categoryName(categories, product.categoryId, lang);
   const [inner, setInner] = useState(false);
   const isFlipped = flipped ?? inner;
   const flip = (v: boolean) => (onFlip ? onFlip(v) : setInner(v));
@@ -55,22 +68,23 @@ export default function ProductCard({
     setNote(localStorage.getItem(key) ?? "");
   }, [key]);
 
-  const dark = product.id !== "fransawy";
+  const light = isLightCard(product.id, product.hex);
+  const dark = !light;
   const fg = dark ? "#F4ECDC" : "#563326";
-  const stripFg = product.id === "fransawy" ? "#563326" : "#16211E";
+  const stripFg = light ? "#563326" : "#16211E";
   const accentRule = product.hex === "#A8432C" ? "#F4ECDC" : "#A8432C";
 
   return (
     <div className="flip-scene aspect-[3/4] w-full" style={{ containerType: "inline-size" }}>
       <div className={`flip-inner ${isFlipped ? "is-flipped" : ""}`}>
         {/* FRONT — الوش */}
-        <div className="flip-face flex flex-col shadow-[0_8px_24px_rgba(22,33,30,.18)]" style={{ background: "#F4ECDC", border: product.id === "fransawy" ? "1px solid #E4D9C3" : undefined }}>
+        <div className="flip-face flex flex-col shadow-[0_8px_24px_rgba(22,33,30,.18)]" style={{ background: "#F4ECDC", border: light ? "1px solid #E4D9C3" : undefined }}>
           <div className="relative" style={{ height: "75%", background: product.hex, color: fg }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoFor(product.id)} alt={ar ? "ديوان" : "DIWAN"} className="absolute" style={{ top: "6cqw", insetInlineStart: "6cqw", width: "11cqw" }} />
+            <img src={logoFor(product.id, product.hex)} alt={ar ? "ديوان" : "DIWAN"} className="absolute" style={{ top: "6cqw", insetInlineStart: "6cqw", width: "11cqw" }} />
             <div className="absolute" style={{ insetInlineStart: "7cqw", bottom: "8cqw" }}>
               <h3 className="font-serif font-bold leading-none" style={{ fontSize: "17cqw" }}>{ar ? product.name : product.nameEn}</h3>
-              <p className="mt-2 font-medium opacity-90" style={{ fontSize: "4.4cqw" }}>{CATEGORY_META[product.categoryId].label[lang]}</p>
+              <p className="mt-2 font-medium opacity-90" style={{ fontSize: "4.4cqw" }}>{catLabel}</p>
             </div>
             <div className="absolute" style={{ insetInlineEnd: "5cqw", top: "14cqw", width: "46cqw", height: "52cqw" }}>
               <CardArt kind={product.illustration} color={product.art} />
@@ -107,7 +121,7 @@ export default function ProductCard({
           <div style={{ width: "4cqw", background: product.hex }} aria-hidden="true" />
           <div className="flex flex-1 flex-col" style={{ padding: "5cqw" }}>
             <h4 className="font-serif font-bold text-green" style={{ fontSize: "7cqw" }}>{ar ? "حضّرها على ذوقك" : "Brew it your way"}</h4>
-            <p className="font-medium opacity-70" style={{ fontSize: "3.6cqw" }}>{CATEGORY_META[product.categoryId].label[lang]} · {ar ? product.name : product.nameEn}</p>
+            <p className="font-medium opacity-70" style={{ fontSize: "3.6cqw" }}>{catLabel} · {ar ? product.name : product.nameEn}</p>
             <ol className="mt-2 flex flex-1 flex-col justify-around">
               {(ar ? product.steps : product.stepsEn).map((s, i) => (
                 <li key={i} className="flex items-start gap-2" style={{ fontSize: "3.8cqw" }}>

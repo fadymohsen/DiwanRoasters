@@ -16,6 +16,15 @@ function PromoField() {
   const { promo } = useCartLines();
   const [draft, setDraft] = useState("");
 
+  if (applied && !promo) {
+    return (
+      <div className="flex items-center justify-between rounded-xl bg-n200 px-3 py-2.5 text-sm text-n500" aria-live="polite">
+        <span><bdi dir="ltr" className="font-semibold">{applied.toUpperCase()}</bdi> · {l({ en: "Checking the code", ar: "جارٍ التحقق من الكود" })}</span>
+        <button onClick={() => { setPromo(""); setDraft(""); }} aria-label={l({ en: "Remove code", ar: "إزالة الكود" })} className="rounded-full p-1 hover:bg-black/5"><X className="h-4 w-4" /></button>
+      </div>
+    );
+  }
+
   if (applied && promo?.ok) {
     return (
       <div className="flex items-center justify-between rounded-xl bg-[#2E6B4F]/10 px-3 py-2.5 text-sm text-[#1f5a3f]">

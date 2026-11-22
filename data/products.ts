@@ -1,13 +1,10 @@
-export type Category = "قهوة تركي" | "إسبريسو" | "قهوة منكهة";
-export type CategoryId = "turkish" | "espresso" | "flavored";
+import type { Bi, CategoryId } from "@/lib/types";
+export type { Bi, CategoryId };
+export type Category = string;
 export type Roast = "فاتح" | "وسط" | "غامق";
 export type Spice = "سادة" | "محوج";
 
-export interface Bi {
-  ar: string;
-  en: string;
-}
-
+/** The three launch categories. The live list comes from the database; this seeds it and backs it up. */
 export const CATEGORY_META: Record<CategoryId, { ar: Category; label: Bi; blurb: Bi }> = {
   turkish: {
     ar: "قهوة تركي",
@@ -55,8 +52,8 @@ export interface Product {
   copyEn: string;
   weight: string;
   weightEn: string;
-  roasts?: [Roast, Roast];
-  states?: [Spice, Spice];
+  roasts?: Roast[];
+  states?: Spice[];
   ratio?: { arabica: number; robusta: number; label: string; labelEn: string };
   type?: string;
   typeEn?: string;

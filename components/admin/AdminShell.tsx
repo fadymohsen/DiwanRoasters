@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Boxes, ExternalLink, Menu, Package, Percent, Search, Settings, ShoppingCart, Truck, Users, X } from "lucide-react";
+import { BarChart3, Boxes, ExternalLink, Loader2, LogOut, Menu, Package, Percent, Search, Settings, ShoppingCart, Tags, Truck, Users, X } from "lucide-react";
 import { useCatalogStore } from "@/store/useCatalogStore";
 import { useTrap } from "@/lib/useTrap";
 import { useLangStore, useLocalized } from "@/lib/i18n";
@@ -21,6 +21,7 @@ const GROUPS = [
     en: "Catalog", ar: "الكتالوج",
     items: [
       { href: "/admin/products", icon: Package, en: "Products", ar: "المنتجات" },
+      { href: "/admin/categories", icon: Tags, en: "Categories", ar: "الفئات" },
       { href: "/admin/inventory", icon: Boxes, en: "Inventory", ar: "المخزون" },
     ],
   },
@@ -100,6 +101,15 @@ function Palette({ onClose }: { onClose: () => void }) {
 /** Back-office frame: deliberately plain and neutral, nothing like the storefront. */
 export default function AdminShell({ children }: { children: ReactNode }) {
   const path = usePathname();
+  // the sign-in page stands alone: no menu, no data
+  if (path === "/admin/login") return <>{children}</>;
+  return <Frame>{children}</Frame>;
+}
+
+function Frame({ children }: { children: ReactNode }) {
+  const path = usePathname();
+  const ready = useCatalogStore((s) => s.adminReady);
+  const loadAdmin = useCatalogStore((s) => s.loadAdmin);
   const l = useLocalized();
   const lang = useLangStore((s) => s.lang);
   const toggle = useLangStore((s) => s.toggle);
@@ -107,6 +117,20 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const storeName = useCatalogStore((s) => s.settings.storeName);
   const [open, setOpen] = useState(false);
   const [palette, setPalette] = useState(false);
+
+  useEffect(() => {
+    void loadAdmin();
+    // pick up new orders and messages while the page stays open
+    const t = window.setInterval(() => { if (!document.hidden) void loadAdmin(); }, 60_000);
+    return () => window.clearInterval(t);
+  }, [loadAdmin]);
+
+  const signOut = async () => {
+    await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
+    // a full page load on purpose: it drops every cached screen and the signed-out state with it
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.href = "/admin/login";
+  };
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -161,13 +185,23 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             <span className="hidden sm:inline">{l({ en: "View store", ar: "عرض المتجر" })}</span>
             <ExternalLink className="h-3.5 w-3.5" />
           </Link>
+          <button onClick={signOut} className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold hover:bg-white/10">
+            <span className="hidden sm:inline">{l({ en: "Sign out", ar: "خروج" })}</span>
+            <LogOut className="h-3.5 w-3.5" />
+          </button>
         </div>
       </header>
 
       <div className="mx-auto flex max-w-[1400px]">
         <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-60 shrink-0 overflow-y-auto border-e border-[#e1e1e1] md:block">{nav}</aside>
         {open && <div className="fixed inset-x-0 top-14 z-30 max-h-[calc(100vh-3.5rem)] overflow-y-auto border-b border-[#e1e1e1] bg-[#f1f1f1] md:hidden">{nav}</div>}
-        <main className="min-w-0 flex-1 p-4 md:p-8">{children}</main>
+        <main className="min-w-0 flex-1 p-4 md:p-8">
+          {ready ? children : (
+            <div className="grid min-h-[40vh] place-items-center text-sm text-[#616161]" role="status">
+              <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{l({ en: "Loading your store", ar: "جارٍ تحميل بيانات المتجر" })}</span>
+            </div>
+          )}
+        </main>
       </div>
       {palette && <Palette onClose={() => setPalette(false)} />}
     </div>

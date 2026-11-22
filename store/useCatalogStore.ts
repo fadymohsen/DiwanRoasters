@@ -1,362 +1,227 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { PRODUCTS, type Bi, type CategoryId } from "@/data/products";
-import { SITE } from "@/lib/site";
+import type {
+  AdjustReason, Adjustment, AdminData, CatalogItem, CatalogVariant, Discount, Message, Order, OrderRequest, OrderStatus,
+  PublicCatalog, ShippingRate, StoreCategory, StoreSettings,
+} from "@/lib/types";
+import { useToastStore } from "@/store/useToastStore";
 
-export interface CatalogVariant {
-  key: string;
-  label: Bi;
-  sku: string;
-  /** EGP per pack */
-  price: number;
-  /** Original price shown struck through, when set */
-  compareAt: number | null;
-  /** Unit cost, used for margin and stock value */
-  cost: number | null;
-  /** null = not tracked */
-  stock: number | null;
-  /** Alert when stock falls to this number or below */
-  threshold: number;
+// The types live in lib/types.ts so the server can use them too. They are re-exported here for the existing imports.
+export type {
+  AdjustReason, Adjustment, CatalogItem, CatalogVariant, Discount, DiscountType, Gift, Message, Order, OrderLine, OrderStatus, PayMethod,
+  ProductStatus, Refund, ShippingRate, StoreCategory, StoreSettings, TimelineEvent,
+} from "@/lib/types";
+
+const EMPTY_SETTINGS: StoreSettings = { storeName: "DIWAN", phone: "", whatsapp: "", supportEmail: "", orderPrefix: "DW" };
+
+/** Talk to the back-office API. A lapsed session sends you back to the sign-in page. */
+export async function adminApi<T = unknown>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", url: string, data?: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method,
+    headers: data === undefined ? undefined : { "Content-Type": "application/json" },
+    body: data === undefined ? undefined : JSON.stringify(data),
+    cache: "no-store",
+  });
+  if (res.status === 401) {
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.href = "/admin/login";
+    throw new Error("Signed out");
+  }
+  const out = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) throw new Error(out.error || `Request failed (${res.status})`);
+  return out as T;
 }
-
-export type ProductStatus = "active" | "draft" | "archived";
-
-export interface CatalogItem {
-  id: string;
-  name: Bi;
-  description: Bi;
-  categoryId: CategoryId;
-  hex: string;
-  image: string;
-  status: ProductStatus;
-  tags: string[];
-  variants: CatalogVariant[];
-}
-
-export type OrderStatus = "new" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled";
-
-export interface OrderLine {
-  key: string;
-  name: Bi;
-  variant: Bi;
-  qty: number;
-  price: number;
-}
-
-export interface TimelineEvent {
-  status: OrderStatus | "paid" | "note";
-  at: number;
-  note?: string;
-}
-
-export type DiscountType = "percent" | "fixed" | "shipping";
-
-export interface Discount {
-  id: string;
-  code: string;
-  type: DiscountType;
-  /** percent (1-100), or EGP off for "fixed"; ignored for free shipping */
-  value: number;
-  minSubtotal: number;
-  /** null = unlimited */
-  usageLimit: number | null;
-  used: number;
-  startsAt: number | null;
-  endsAt: number | null;
-  /** "all" or a category id */
-  scope: "all" | CategoryId;
-  active: boolean;
-  note: string;
-}
-
-export interface ShippingRate {
-  id: string;
-  name: Bi;
-  /** City names this rate covers (lowercase match). "*" covers everywhere else. */
-  cities: string[];
-  price: number;
-  /** Free shipping at or above this subtotal. null = never free. */
-  freeOver: number | null;
-  eta: Bi;
-  active: boolean;
-}
-
-export interface StoreSettings {
-  storeName: string;
-  phone: string;
-  whatsapp: string;
-  supportEmail: string;
-  orderPrefix: string;
-}
-
-export interface Refund {
-  id: string;
-  at: number;
-  amount: number;
-  reason: string;
-  restocked: boolean;
-}
-
-export type PayMethod = "cod" | "instapay" | "wallet";
-
-export interface Gift {
-  name: string;
-  phone: string;
-  message: string;
-}
-
-export interface Order {
-  id: string;
-  createdAt: number;
-  source: "web" | "draft";
-  customer: { name: string; phone: string; email: string; address: string; city: string; notes: string };
-  lines: OrderLine[];
-  subtotal: number;
-  discount: { code: string; amount: number } | null;
-  shipping: { label: Bi; price: number } | null;
-  total: number;
-  refunds: Refund[];
-  status: OrderStatus;
-  payment: { method: PayMethod; paid: boolean };
-  /** EGP taken off for paying by Instapay or wallet */
-  payDiscount?: number;
-  /** Set when the order is a gift: who receives it */
-  gift?: Gift | null;
-  tracking: { courier: string; number: string };
-  /** Internal, never shown to the customer */
-  internalNote: string;
-  timeline: TimelineEvent[];
-}
-
-export type AdjustReason = "restock" | "correction" | "damaged" | "return" | "order";
-
-export interface Adjustment {
-  id: string;
-  at: number;
-  itemId: string;
-  variantKey: string;
-  delta: number;
-  reason: AdjustReason;
-  note: string;
-}
-
-export interface Message {
-  id: string;
-  createdAt: number;
-  name: string;
-  contact: string;
-  topic: string;
-  body: string;
-  read: boolean;
-}
-
-const sku = (id: string, key: string) => `DW-${id.toUpperCase().slice(0, 4)}-${key === "default" ? "200" : key.split("-").map((x) => x.slice(0, 3).toUpperCase()).join("")}`;
-
-const seed = (): CatalogItem[] =>
-  PRODUCTS.map((p) => ({
-    id: p.id,
-    name: { ar: p.name, en: p.nameEn },
-    description: { ar: p.copy, en: p.copyEn },
-    categoryId: p.categoryId,
-    hex: p.hex,
-    image: p.image,
-    status: "active",
-    tags: [],
-    variants: p.variants.map((v) => ({ ...v, sku: sku(p.id, v.key), compareAt: null, cost: null, stock: null, threshold: 5 })),
-  }));
-
-export type NewOrder = Pick<Order, "customer" | "lines" | "subtotal" | "discount" | "shipping" | "total"> & { source?: "web" | "draft"; payMethod?: PayMethod; payDiscount?: number; gift?: Gift | null };
 
 interface CatalogState {
   items: CatalogItem[];
+  categories: StoreCategory[];
   orders: Order[];
   messages: Message[];
   adjustments: Adjustment[];
   discounts: Discount[];
   shippingRates: ShippingRate[];
   settings: StoreSettings;
-  upsertDiscount: (d: Discount) => void;
-  deleteDiscount: (id: string) => void;
-  upsertRate: (r: ShippingRate) => void;
-  deleteRate: (id: string) => void;
-  updateSettings: (patch: Partial<StoreSettings>) => void;
-  refundOrder: (id: string, amount: number, reason: string, restock: boolean) => void;
-  addMessage: (m: Omit<Message, "id" | "createdAt" | "read">) => void;
-  markMessageRead: (id: string) => void;
-  upsertItem: (item: CatalogItem) => void;
-  deleteItem: (id: string) => void;
+  /** the storefront catalog has arrived (or the built-in fallback is showing) */
+  ready: boolean;
+  /** the back-office data has arrived */
+  adminReady: boolean;
+
+  setPublic: (c: PublicCatalog) => void;
+  loadAdmin: () => Promise<void>;
+
+  upsertItem: (item: CatalogItem) => Promise<string | null>;
+  deleteItem: (id: string) => Promise<string | null>;
   setVariant: (id: string, key: string, patch: Partial<CatalogVariant>) => void;
-  /** Change tracked stock by `delta` and log why */
-  adjustStock: (id: string, key: string, delta: number, reason: AdjustReason, note?: string) => void;
-  /** Set tracked stock to an exact number (or null to stop tracking) and log the difference */
+  adjustStock: (id: string, key: string, delta: number, reason: AdjustReason, note?: string) => Promise<string | null>;
   setStock: (id: string, key: string, stock: number | null, note?: string) => void;
-  resetCatalog: () => void;
-  placeOrder: (input: NewOrder) => Order;
-  updateOrder: (id: string, patch: Partial<Pick<Order, "tracking" | "internalNote">>) => void;
-  setOrderStatus: (id: string, status: OrderStatus, note?: string) => void;
-  setOrderPaid: (id: string, paid: boolean) => void;
+  upsertCategory: (c: StoreCategory) => Promise<string | null>;
+  deleteCategory: (id: string) => Promise<string | null>;
+  upsertDiscount: (d: Discount) => Promise<string | null>;
+  deleteDiscount: (id: string) => Promise<string | null>;
+  upsertRate: (r: ShippingRate) => Promise<string | null>;
+  deleteRate: (id: string) => Promise<string | null>;
+  updateSettings: (patch: Partial<StoreSettings>) => Promise<string | null>;
+  refundOrder: (id: string, amount: number, reason: string, restock: boolean) => Promise<string | null>;
+  markMessageRead: (id: string) => void;
+  createOrder: (req: OrderRequest & { shippingPrice?: number }) => Promise<Order>;
+  updateOrder: (id: string, patch: { tracking?: Order["tracking"]; internalNote?: string }) => Promise<string | null>;
+  setOrderStatus: (id: string, status: OrderStatus, note?: string) => Promise<string | null>;
+  setOrderPaid: (id: string, paid: boolean) => Promise<string | null>;
 }
 
-const uid = (p: string) => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+const timers = new Map<string, ReturnType<typeof setTimeout>>();
+/** Run `fn` once the user stops typing for `ms`, one pending run per key. */
+function later(key: string, ms: number, fn: () => void) {
+  clearTimeout(timers.get(key));
+  timers.set(key, setTimeout(() => { timers.delete(key); fn(); }, ms));
+}
 
-export const useCatalogStore = create<CatalogState>()(
-  persist(
-    (set, get) => ({
-      items: seed(),
-      orders: [],
-      messages: [],
-      adjustments: [],
-      discounts: [],
-      shippingRates: [],
-      settings: { storeName: "DIWAN", phone: SITE.phone, whatsapp: SITE.phone, supportEmail: "", orderPrefix: "DW" },
-      upsertDiscount: (d) => set((s) => ({ discounts: s.discounts.some((x) => x.id === d.id) ? s.discounts.map((x) => (x.id === d.id ? d : x)) : [d, ...s.discounts] })),
-      deleteDiscount: (id) => set((s) => ({ discounts: s.discounts.filter((x) => x.id !== id) })),
-      upsertRate: (r) => set((s) => ({ shippingRates: s.shippingRates.some((x) => x.id === r.id) ? s.shippingRates.map((x) => (x.id === r.id ? r : x)) : [...s.shippingRates, r] })),
-      deleteRate: (id) => set((s) => ({ shippingRates: s.shippingRates.filter((x) => x.id !== id) })),
-      updateSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
-      refundOrder: (id, amount, reason, restock) => {
-        const order = get().orders.find((o) => o.id === id);
-        if (!order) return;
-        const at = Date.now();
-        set((s) => {
-          const log: Adjustment[] = [];
-          let items = s.items;
-          if (restock) {
-            items = s.items.map((i) => ({
-              ...i,
-              variants: i.variants.map((v) => {
-                const line = order.lines.find((l) => l.key === `${i.id}:${v.key}`);
-                if (!line || v.stock === null) return v;
-                log.push({ id: uid("ADJ"), at, itemId: i.id, variantKey: v.key, delta: line.qty, reason: "return", note: id });
-                return { ...v, stock: v.stock + line.qty };
-              }),
-            }));
-          }
-          return {
-            items,
-            adjustments: [...log, ...s.adjustments],
-            orders: s.orders.map((o) =>
-              o.id === id
-                ? {
-                    ...o,
-                    refunds: [...o.refunds, { id: uid("RF"), at, amount, reason, restocked: restock }],
-                    timeline: [...o.timeline, { status: "note" as const, at, note: `Refund ${amount} EGP${reason ? ": " + reason : ""}` }],
-                  }
-                : o,
-            ),
-          };
-        });
-      },
-      addMessage: (m) =>
-        set((s) => ({ messages: [{ ...m, id: `MSG-${s.messages.length + 1}`, createdAt: Date.now(), read: false }, ...s.messages] })),
-      markMessageRead: (id) => set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, read: true } : m)) })),
-      upsertItem: (item) =>
-        set((s) =>
-          s.items.some((i) => i.id === item.id)
-            ? { items: s.items.map((i) => (i.id === item.id ? item : i)) }
-            : { items: [...s.items, item] },
-        ),
-      deleteItem: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
-      setVariant: (id, key, patch) =>
-        set((s) => ({
-          items: s.items.map((i) =>
-            i.id === id ? { ...i, variants: i.variants.map((v) => (v.key === key ? { ...v, ...patch } : v)) } : i,
-          ),
-        })),
-      adjustStock: (id, key, delta, reason, note = "") =>
-        set((s) => ({
-          items: s.items.map((i) =>
-            i.id !== id
-              ? i
-              : {
-                  ...i,
-                  variants: i.variants.map((v) =>
-                    v.key === key && v.stock !== null ? { ...v, stock: Math.max(0, v.stock + delta) } : v,
-                  ),
-                },
-          ),
-          adjustments: [{ id: uid("ADJ"), at: Date.now(), itemId: id, variantKey: key, delta, reason, note }, ...s.adjustments],
-        })),
-      setStock: (id, key, stock, note = "") => {
-        const item = get().items.find((i) => i.id === id);
-        const v = item?.variants.find((x) => x.key === key);
-        if (!v) return;
-        const delta = stock === null || v.stock === null ? 0 : stock - v.stock;
-        set((s) => ({
-          items: s.items.map((i) =>
-            i.id === id ? { ...i, variants: i.variants.map((x) => (x.key === key ? { ...x, stock } : x)) } : i,
-          ),
-          adjustments:
-            delta !== 0
-              ? [{ id: uid("ADJ"), at: Date.now(), itemId: id, variantKey: key, delta, reason: "correction" as const, note }, ...s.adjustments]
-              : s.adjustments,
-        }));
-      },
-      resetCatalog: () => set({ items: seed() }),
-      placeOrder: (input) => {
-        const now = Date.now();
-        const { payMethod, payDiscount, gift, ...rest } = input;
-        const order: Order = {
-          ...rest,
-          source: input.source ?? "web",
-          payDiscount: payDiscount ?? 0,
-          gift: gift ?? null,
-          refunds: [],
-          id: `${get().settings.orderPrefix || "DW"}-${String(get().orders.length + 1001)}`,
-          createdAt: now,
-          status: "new",
-          payment: { method: payMethod ?? "cod", paid: false },
-          tracking: { courier: "", number: "" },
-          internalNote: "",
-          timeline: [{ status: "new", at: now }],
-        };
-        // tracked stock goes down when the order is placed
-        set((s) => {
-          const log: Adjustment[] = [];
-          const items = s.items.map((i) => ({
-            ...i,
-            variants: i.variants.map((v) => {
-              const line = input.lines.find((l) => l.key === `${i.id}:${v.key}`);
-              if (!line || v.stock === null) return v;
-              log.push({ id: uid("ADJ"), at: now, itemId: i.id, variantKey: v.key, delta: -line.qty, reason: "order", note: order.id });
-              return { ...v, stock: Math.max(0, v.stock - line.qty) };
-            }),
-          }));
-          const code = input.discount?.code.toLowerCase();
-          const discounts = code ? s.discounts.map((d) => (d.code.toLowerCase() === code ? { ...d, used: d.used + 1 } : d)) : s.discounts;
-          return { orders: [order, ...s.orders], items, discounts, adjustments: [...log, ...s.adjustments] };
-        });
-        return order;
-      },
-      updateOrder: (id, patch) => set((s) => ({ orders: s.orders.map((o) => (o.id === id ? { ...o, ...patch } : o)) })),
-      setOrderStatus: (id, status, note) =>
-        set((s) => ({
-          orders: s.orders.map((o) =>
-            o.id === id ? { ...o, status, timeline: [...o.timeline, { status, at: Date.now(), note }] } : o,
-          ),
-        })),
-      setOrderPaid: (id, paid) =>
-        set((s) => ({
-          orders: s.orders.map((o) =>
-            o.id === id
-              ? { ...o, payment: { ...o.payment, paid }, timeline: paid ? [...o.timeline, { status: "paid" as const, at: Date.now() }] : o.timeline }
-              : o,
-          ),
-        })),
-    }),
-    { name: "diwan-catalog-v3", skipHydration: true },
-  ),
-);
+export const useCatalogStore = create<CatalogState>()((set, get) => {
+  /** Save to the server. On failure: say why, and reload the truth so the screen never lies. */
+  const save = async (run: () => Promise<unknown>): Promise<string | null> => {
+    try {
+      await run();
+      return null;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Something went wrong";
+      useToastStore.getState().push(msg, "error");
+      void get().loadAdmin();
+      return msg;
+    }
+  };
+  const replaceOrder = (o: Order) => set((s) => ({ orders: s.orders.map((x) => (x.id === o.id ? o : x)) }));
+  const patchOrder = (id: string, body: unknown) =>
+    save(async () => replaceOrder((await adminApi<{ order: Order }>("PATCH", `/api/admin/orders/${encodeURIComponent(id)}`, body)).order));
+
+  return {
+    items: [],
+    categories: [],
+    orders: [],
+    messages: [],
+    adjustments: [],
+    discounts: [],
+    shippingRates: [],
+    settings: EMPTY_SETTINGS,
+    ready: false,
+    adminReady: false,
+
+    setPublic: (c) => set({ items: c.items, categories: c.categories, shippingRates: c.shippingRates, settings: c.settings, ready: true }),
+
+    loadAdmin: async () => {
+      try {
+        const d = await adminApi<AdminData>("GET", "/api/admin/data");
+        set({ ...d, ready: true, adminReady: true });
+      } catch (e) {
+        useToastStore.getState().push(e instanceof Error ? e.message : "Could not load the data", "error");
+      }
+    },
+
+    upsertItem: (item) => {
+      set((s) => ({ items: s.items.some((i) => i.id === item.id) ? s.items.map((i) => (i.id === item.id ? item : i)) : [...s.items, item] }));
+      return save(async () => {
+        await adminApi("PUT", `/api/admin/products/${encodeURIComponent(item.id)}`, item);
+        await get().loadAdmin();
+      });
+    },
+    deleteItem: (id) => {
+      set((s) => ({ items: s.items.filter((i) => i.id !== id) }));
+      return save(() => adminApi("DELETE", `/api/admin/products/${encodeURIComponent(id)}`));
+    },
+
+    setVariant: (id, key, patch) => {
+      set((s) => ({ items: s.items.map((i) => (i.id === id ? { ...i, variants: i.variants.map((v) => (v.key === key ? { ...v, ...patch } : v)) } : i)) }));
+      if (patch.threshold !== undefined) {
+        later(`th:${id}:${key}`, 600, () => void save(() => adminApi("POST", "/api/admin/stock", { op: "threshold", itemId: id, variantKey: key, threshold: patch.threshold })));
+      }
+    },
+    adjustStock: (id, key, delta, reason, note = "") =>
+      save(async () => {
+        await adminApi("POST", "/api/admin/stock", { op: "adjust", itemId: id, variantKey: key, delta, reason, note });
+        await get().loadAdmin();
+      }),
+    setStock: (id, key, stock, note = "") => {
+      set((s) => ({ items: s.items.map((i) => (i.id === id ? { ...i, variants: i.variants.map((v) => (v.key === key ? { ...v, stock } : v)) } : i)) }));
+      later(`st:${id}:${key}`, 700, () =>
+        void save(async () => {
+          await adminApi("POST", "/api/admin/stock", { op: "set", itemId: id, variantKey: key, stock, note });
+          await get().loadAdmin();
+        }),
+      );
+    },
+
+    upsertCategory: (c) => {
+      set((s) => ({ categories: (s.categories.some((x) => x.id === c.id) ? s.categories.map((x) => (x.id === c.id ? c : x)) : [...s.categories, c]).sort((a, b) => a.sort - b.sort) }));
+      return save(() => adminApi("PUT", `/api/admin/categories/${encodeURIComponent(c.id)}`, c));
+    },
+    deleteCategory: (id) => {
+      set((s) => ({ categories: s.categories.filter((c) => c.id !== id) }));
+      return save(() => adminApi("DELETE", `/api/admin/categories/${encodeURIComponent(id)}`));
+    },
+
+    upsertDiscount: (d) => {
+      set((s) => ({ discounts: s.discounts.some((x) => x.id === d.id) ? s.discounts.map((x) => (x.id === d.id ? d : x)) : [d, ...s.discounts] }));
+      return save(() => adminApi("PUT", `/api/admin/discounts/${encodeURIComponent(d.id)}`, d));
+    },
+    deleteDiscount: (id) => {
+      set((s) => ({ discounts: s.discounts.filter((x) => x.id !== id) }));
+      return save(() => adminApi("DELETE", `/api/admin/discounts/${encodeURIComponent(id)}`));
+    },
+
+    upsertRate: (r) => {
+      set((s) => ({ shippingRates: s.shippingRates.some((x) => x.id === r.id) ? s.shippingRates.map((x) => (x.id === r.id ? r : x)) : [...s.shippingRates, r] }));
+      return save(() => adminApi("PUT", `/api/admin/shipping/${encodeURIComponent(r.id)}`, r));
+    },
+    deleteRate: (id) => {
+      set((s) => ({ shippingRates: s.shippingRates.filter((x) => x.id !== id) }));
+      return save(() => adminApi("DELETE", `/api/admin/shipping/${encodeURIComponent(id)}`));
+    },
+
+    updateSettings: (patch) => {
+      set((s) => ({ settings: { ...s.settings, ...patch } }));
+      return save(async () => set({ settings: (await adminApi<{ settings: StoreSettings }>("PUT", "/api/admin/settings", patch)).settings }));
+    },
+
+    refundOrder: (id, amount, reason, restock) =>
+      save(async () => {
+        await adminApi("PATCH", `/api/admin/orders/${encodeURIComponent(id)}`, { action: "refund", amount, reason, restock });
+        await get().loadAdmin();
+      }),
+
+    markMessageRead: (id) => {
+      set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, read: true } : m)) }));
+      void save(() => adminApi("PATCH", `/api/admin/messages/${encodeURIComponent(id)}`, { read: true }));
+    },
+
+    createOrder: async (req) => {
+      const { order } = await adminApi<{ order: Order }>("POST", "/api/admin/orders", req);
+      set((s) => ({ orders: [order, ...s.orders] }));
+      void get().loadAdmin();
+      return order;
+    },
+    updateOrder: (id, patch) => {
+      set((s) => ({ orders: s.orders.map((o) => (o.id === id ? { ...o, ...patch } : o)) }));
+      return patchOrder(id, { action: "update", ...patch });
+    },
+    setOrderStatus: (id, status, note) => {
+      set((s) => ({ orders: s.orders.map((o) => (o.id === id ? { ...o, status, timeline: [...o.timeline, { status, at: Date.now(), note }] } : o)) }));
+      return patchOrder(id, { action: "status", status, note });
+    },
+    setOrderPaid: (id, paid) => {
+      set((s) => ({ orders: s.orders.map((o) => (o.id === id ? { ...o, payment: { ...o.payment, paid } } : o)) }));
+      return patchOrder(id, { action: "paid", paid });
+    },
+  };
+});
 
 export const lineKey = (productId: string, variantKey: string) => `${productId}:${variantKey}`;
 export const isLive = (i: CatalogItem) => i.status === "active";
 
 /** Resolve a cart line key to its catalog item and variant. */
 export function resolveLine(items: CatalogItem[], key: string) {
-  const [id, vk] = key.split(":");
-  const item = items.find((i) => i.id === id);
+  const i = key.indexOf(":");
+  const [id, vk] = [key.slice(0, i), key.slice(i + 1)];
+  const item = items.find((x) => x.id === id);
   const variant = item?.variants.find((v) => v.key === vk);
   return item && variant ? { item, variant } : null;
 }

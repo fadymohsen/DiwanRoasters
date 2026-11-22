@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { PageHead, btnDark, btnLight, card, input } from "@/components/admin/AdminShell";
-import { CATEGORY_IDS, CATEGORY_META } from "@/data/products";
+import { categoryName } from "@/lib/catalog";
 import { useCatalogStore, type Discount, type DiscountType } from "@/store/useCatalogStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useLangStore, useLocalized } from "@/lib/i18n";
@@ -25,6 +25,7 @@ function Editor({ initial, onClose }: { initial: Discount; onClose: () => void }
   const trap = useTrap(onClose);
   const l = useLocalized();
   const discounts = useCatalogStore((s) => s.discounts);
+  const categories = useCatalogStore((s) => s.categories);
   const upsert = useCatalogStore((s) => s.upsertDiscount);
   const push = useToastStore((s) => s.push);
   const [d, setD] = useState<Discount>(initial);
@@ -83,7 +84,7 @@ function Editor({ initial, onClose }: { initial: Discount; onClose: () => void }
             <label className="text-sm font-medium">{l({ en: "Applies to", ar: "ينطبق على" })}
               <select className={`${input} mt-1`} value={d.scope} onChange={(e) => setD({ ...d, scope: e.target.value as Discount["scope"] })}>
                 <option value="all">{l({ en: "Everything", ar: "كل المنتجات" })}</option>
-                {CATEGORY_IDS.map((c) => <option key={c} value={c}>{l(CATEGORY_META[c].label)}</option>)}
+                {categories.map((c) => <option key={c.id} value={c.id}>{l(c.name)}</option>)}
               </select>
             </label>
             <label className="text-sm font-medium">{l({ en: "Minimum order (EGP)", ar: "الحد الأدنى للطلب (ج.م)" })}
@@ -125,6 +126,7 @@ export default function DiscountsPage() {
   const l = useLocalized();
   const lang = useLangStore((s) => s.lang);
   const discounts = useCatalogStore((s) => s.discounts);
+  const categories = useCatalogStore((s) => s.categories);
   const orders = useCatalogStore((s) => s.orders);
   const upsert = useCatalogStore((s) => s.upsertDiscount);
   const del = useCatalogStore((s) => s.deleteDiscount);
@@ -163,7 +165,7 @@ export default function DiscountsPage() {
                   <tr key={d.id} className="border-b border-[#f0f0f0] last:border-0 hover:bg-[#fafafa]">
                     <td className="p-3"><button className="font-semibold hover:underline" dir="ltr" onClick={() => setEdit(d)}>{d.code}</button>{d.note && <div className="text-xs text-[#8a8a8a]">{d.note}</div>}</td>
                     <td className="p-3"><bdi>{value(d)}</bdi>{d.minSubtotal > 0 && <div className="text-xs text-[#8a8a8a]">{l({ en: `Min ${d.minSubtotal} EGP`, ar: `حد أدنى ${d.minSubtotal} ج.م` })}</div>}</td>
-                    <td className="p-3">{d.scope === "all" ? l({ en: "Everything", ar: "كل المنتجات" }) : CATEGORY_META[d.scope].label[lang]}</td>
+                    <td className="p-3">{d.scope === "all" ? l({ en: "Everything", ar: "كل المنتجات" }) : categoryName(categories, d.scope, lang)}</td>
                     <td className="p-3"><bdi>{d.used}{d.usageLimit !== null ? ` / ${d.usageLimit}` : ""}</bdi></td>
                     <td className="p-3"><bdi>{money(given(d.code), lang)}</bdi></td>
                     <td className="p-3 text-[#616161]">{d.startsAt || d.endsAt ? `${d.startsAt ? fmt(d.startsAt) : "…"} → ${d.endsAt ? fmt(d.endsAt) : "…"}` : l({ en: "Always", ar: "دائماً" })}</td>

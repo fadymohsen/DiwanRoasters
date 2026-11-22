@@ -1,6 +1,11 @@
-import type { CartLine } from "@/lib/cart";
-import type { Bi } from "@/data/products";
-import type { Discount, ShippingRate } from "@/store/useCatalogStore";
+import type { Bi, Discount, ShippingRate } from "@/lib/types";
+
+/** The few fields of a bag line that pricing needs. The storefront and the server both satisfy it. */
+export interface PriceLine {
+  qty: number;
+  item: { categoryId: string };
+  variant: { price: number };
+}
 
 export interface DiscountResult {
   ok: boolean;
@@ -12,7 +17,7 @@ export interface DiscountResult {
 }
 
 /** Check a promo code against the bag. Every rule is re-read from the discount record. */
-export function applyCode(code: string, lines: CartLine[], subtotal: number, discounts: Discount[], now: number): DiscountResult {
+export function applyCode(code: string, lines: PriceLine[], subtotal: number, discounts: Discount[], now: number): DiscountResult {
   const c = code.trim().toLowerCase();
   const fail = (en: string, ar: string): DiscountResult => ({ ok: false, amount: 0, freeShipping: false, error: { en, ar } });
   if (!c) return fail("Enter a code.", "أدخل الكود.");

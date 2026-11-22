@@ -2,7 +2,8 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { PayMethod } from "@/store/useCatalogStore";
+import type { PayMethod } from "@/lib/types";
+import type { DiscountResult } from "@/lib/pricing";
 
 /** Cart lines are keyed `${productId}:${variantKey}`, see lineKey() in useCatalogStore. */
 interface ShopState {
@@ -10,6 +11,9 @@ interface ShopState {
   wishlist: Record<string, boolean>;
   isCartOpen: boolean;
   promo: string;
+  /** the server's verdict on `promo`, for the bag as it is now */
+  promoResult: (Pick<DiscountResult, "ok" | "amount" | "freeShipping" | "error"> & { code: string }) | null;
+  setPromoResult: (r: ShopState["promoResult"]) => void;
   shipCity: string;
   setPromo: (code: string) => void;
   setShipCity: (city: string) => void;
@@ -37,8 +41,10 @@ export const useShopStore = create<ShopState>()(
   wishlist: {},
   isCartOpen: false,
   promo: "",
+  promoResult: null,
+  setPromoResult: (promoResult) => set({ promoResult }),
   shipCity: "",
-  setPromo: (promo) => set({ promo }),
+  setPromo: (promo) => set({ promo, promoResult: null }),
   setShipCity: (shipCity) => set({ shipCity }),
   addToCart: (key, n = 1) => set((s) => ({ cart: { ...s.cart, [key]: (s.cart[key] || 0) + n } })),
   removeFromCart: (key) =>
@@ -54,7 +60,7 @@ export const useShopStore = create<ShopState>()(
       delete next[key];
       return { cart: next };
     }),
-  clearCart: () => set({ cart: {}, promo: "", payMethod: "cod", gift: { on: false, name: "", phone: "", message: "" } }),
+  clearCart: () => set({ cart: {}, promo: "", promoResult: null, payMethod: "cod", gift: { on: false, name: "", phone: "", message: "" } }),
   toggleWishlist: (id) => set((s) => ({ wishlist: { ...s.wishlist, [id]: !s.wishlist[id] } })),
   setCartOpen: (open) => set({ isCartOpen: open }),
 }),

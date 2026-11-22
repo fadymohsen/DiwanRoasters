@@ -7,17 +7,18 @@ import CartDrawer from "@/components/layout/CartDrawer";
 import Footer from "@/components/layout/Footer";
 import Reveal from "@/components/ui/Reveal";
 import { SplitText } from "@/components/ui/motion";
-import { CATEGORY_IDS, CATEGORY_META, type CategoryId } from "@/data/products";
+import { categoryName } from "@/lib/catalog";
 import AddToBagButton from "@/components/shop/AddToBagButton";
 import { inStock, isLive, isLow, lineKey, useCatalogStore, type CatalogItem } from "@/store/useCatalogStore";
 import { useLangStore, useLocalized } from "@/lib/i18n";
 import { money } from "@/lib/format";
 
-type Filter = "all" | CategoryId;
+type Filter = "all" | string;
 
 function ShopCard({ item }: { item: CatalogItem }) {
   const lang = useLangStore((s) => s.lang);
   const l = useLocalized();
+  const categories = useCatalogStore((s) => s.categories);
   const [variantKey, setVariantKey] = useState(item.variants[0].key);
   const variant = item.variants.find((v) => v.key === variantKey) ?? item.variants[0];
   const available = inStock(variant);
@@ -34,7 +35,7 @@ function ShopCard({ item }: { item: CatalogItem }) {
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
         />
         <span className="absolute start-3 top-3 rounded-[6px] bg-sandy/90 px-2.5 py-1 text-[11px] font-semibold text-green backdrop-blur">
-          {CATEGORY_META[item.categoryId].label[lang]}
+          {categoryName(categories, item.categoryId, lang)}
         </span>
       </Link>
 
@@ -76,7 +77,7 @@ function ShopCard({ item }: { item: CatalogItem }) {
               );
             })()}
             <div className="text-[11px] text-n400">
-              {isLow(variant) ? <span className="font-medium text-[#9A6B12]">{l({ en: `${variant.stock} left`, ar: `متبقي ${variant.stock}` })}</span> : l({ en: "200 g pack", ar: "عبوة 200 جم" })}
+              {isLow(variant) ? <span className="font-medium text-[#9A6B12]">{l({ en: `${variant.stock} left`, ar: `متبقي ${variant.stock}` })}</span> : item.details.weight ? l({ en: `${item.details.weight.en} pack`, ar: `عبوة ${item.details.weight.ar}` }) : null}
             </div>
           </div>
           <AddToBagButton lineKey={lineKey(item.id, variant.key)} disabled={!available} flyImage={item.image} size="sm" />
@@ -89,20 +90,22 @@ function ShopCard({ item }: { item: CatalogItem }) {
 export default function ShopPage() {
   const lang = useLangStore((s) => s.lang);
   const l = useLocalized();
-  const items = useCatalogStore((s) => s.items).filter(isLive);
+  const all = useCatalogStore((s) => s.items);
+  const categories = useCatalogStore((s) => s.categories);
+  const items = all.filter(isLive);
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<"featured" | "low" | "high">("featured");
 
   useEffect(() => {
     const c = new URLSearchParams(window.location.search).get("category");
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (c && (CATEGORY_IDS as string[]).includes(c)) setFilter(c as CategoryId);
+    if (c) setFilter(c);
   }, []);
 
   const base = filter === "all" ? items : items.filter((i) => i.categoryId === filter);
   const minPrice = (i: CatalogItem) => Math.min(...i.variants.map((v) => v.price));
   const filtered = sort === "featured" ? base : [...base].sort((a, b) => (sort === "low" ? minPrice(a) - minPrice(b) : minPrice(b) - minPrice(a)));
-  const filters: Filter[] = ["all", ...CATEGORY_IDS];
+  const filters: Filter[] = ["all", ...categories.filter((c) => items.some((i) => i.categoryId === c.id)).map((c) => c.id)];
 
   return (
     <main id="main" className="page-in relative">
@@ -114,8 +117,8 @@ export default function ShopPage() {
           <SplitText as="h1" text={l({ en: "Shop", ar: "منتجاتنا" })} className="block font-editorial text-5xl font-semibold text-green md:text-7xl" />
           <p className="mt-4 max-w-xl text-base leading-relaxed text-n500">
             {l({
-              en: "Nine blends in three categories. Every pack is 200 g, and every price is in Egyptian pounds.",
-              ar: "تسع توليفات في ثلاث فئات. كل عبوة 200 جم، وكل الأسعار بالجنيه المصري.",
+              en: "Our blends, by category. Every price is in Egyptian pounds.",
+              ar: "توليفاتنا مرتبة حسب الفئة، وكل الأسعار بالجنيه المصري.",
             })}
           </p>
         </Reveal>
@@ -129,7 +132,7 @@ export default function ShopPage() {
               onClick={() => setFilter(f)}
               className={`rounded-full px-5 py-2.5 text-sm font-semibold transition active:scale-[0.97] ${filter === f ? "bg-green text-sandy" : "border border-n300 text-n500 hover:border-green hover:text-green"}`}
             >
-              {f === "all" ? l({ en: "All", ar: "الكل" }) : CATEGORY_META[f].label[lang]}
+              {f === "all" ? l({ en: "All", ar: "الكل" }) : categoryName(categories, f, lang)}
             </button>
           ))}
         </div>

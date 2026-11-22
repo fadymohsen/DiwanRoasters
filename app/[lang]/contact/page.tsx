@@ -9,6 +9,7 @@ import Footer from "@/components/layout/Footer";
 import Reveal from "@/components/ui/Reveal";
 import { SplitText } from "@/components/ui/motion";
 import { useCatalogStore } from "@/store/useCatalogStore";
+import { sendMessage } from "@/lib/client/shop";
 import { useLocalized } from "@/lib/i18n";
 import { SITE, waLink } from "@/lib/site";
 
@@ -25,12 +26,12 @@ const TOPICS = [
 
 export default function ContactPage() {
   const l = useLocalized();
-  const addMessage = useCatalogStore((s) => s.addMessage);
   const settings = useCatalogStore((s) => s.settings);
   const [sent, setSent] = useState(false);
   const [form, setForm] = useState({ name: "", contact: "", topic: "recommend", body: "" });
 
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [touched, setTouched] = useState(false);
   const c = form.contact.trim();
   const contactOk = /^\S+@\S+\.\S+$/.test(c) || c.replace(/\D/g, "").length >= 10;
@@ -44,11 +45,11 @@ export default function ContactPage() {
       return;
     }
     setBusy(true);
-    window.setTimeout(() => {
-      addMessage(form);
-      setSent(true);
-      setBusy(false);
-    }, 600);
+    setFailed(false);
+    sendMessage(form)
+      .then(() => setSent(true))
+      .catch(() => setFailed(true))
+      .finally(() => setBusy(false));
   };
 
   return (
@@ -144,6 +145,7 @@ export default function ContactPage() {
                   </label>
                   <div className="sm:col-span-2">
                     <button type="submit" disabled={busy} className="btn btn-primary w-full sm:w-auto">{busy ? (<><Loader2 className="h-4 w-4 animate-spin" />{l({ en: "Sending", ar: "جارٍ الإرسال" })}</>) : l({ en: "Send message", ar: "إرسال الرسالة" })}</button>
+                    {failed && <p role="alert" className="mt-3 text-sm text-[#A8322F]">{l({ en: "We could not send it. Please try again or message us on WhatsApp.", ar: "تعذّر الإرسال. حاول مرة أخرى أو راسلنا على واتساب." })}</p>}
                   </div>
                 </form>
               )}

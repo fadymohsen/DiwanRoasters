@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { inStock, isLive, resolveLine, useCatalogStore, type CatalogItem, type CatalogVariant } from "@/store/useCatalogStore";
 import { useShopStore } from "@/store/useShopStore";
-import { applyCode, findRate, shippingFor } from "@/lib/pricing";
+import { findRate, shippingFor, type DiscountResult } from "@/lib/pricing";
+import { checkPromo } from "@/lib/client/shop";
 import { SITE } from "@/lib/site";
 
 /** True once the saved bag has been read from the browser. */
@@ -32,17 +33,11 @@ export interface CartLine {
 export function useCartLines() {
   const cart = useShopStore((s) => s.cart);
   const items = useCatalogStore((s) => s.items);
-  const discounts = useCatalogStore((s) => s.discounts);
   const rates = useCatalogStore((s) => s.shippingRates);
   const promo = useShopStore((s) => s.promo);
   const city = useShopStore((s) => s.shipCity);
   const payMethod = useShopStore((s) => s.payMethod);
-  // read the clock after mount, so the prerendered page does not freeze a date
-  const [now, setNow] = useState(0);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setNow(Date.now());
-  }, [promo]);
+  const verdict = useShopStore((s) => s.promoResult);
 
   return useMemo(() => {
     const lines: CartLine[] = Object.entries(cart)
@@ -58,7 +53,8 @@ export function useCartLines() {
     const subtotal = lines.reduce((a, b) => a + b.qty * b.variant.price, 0);
     const savings = lines.reduce((a, b) => a + (b.variant.compareAt && b.variant.compareAt > b.variant.price ? (b.variant.compareAt - b.variant.price) * b.qty : 0), 0);
     const blocked = lines.some((l) => l.unavailable || l.overStock);
-    const code = promo ? applyCode(promo, lines, subtotal, discounts, now || 1e15) : null;
+    // the server decides what a code is worth; a verdict for an older code or bag is ignored
+    const code: Pick<DiscountResult, "ok" | "amount" | "freeShipping" | "error"> | null = promo && verdict && verdict.code === promo ? verdict : null;
     const discountAmount = code?.ok ? code.amount : 0;
     const after = subtotal - discountAmount;
     const ship = shippingFor(findRate(rates, city), after, !!code?.ok && code.freeShipping);
@@ -66,5 +62,31 @@ export function useCartLines() {
     const payDiscount = payMethod === "cod" ? 0 : Math.round((after * SITE.payDiscountPct) / 100);
     const total = after - payDiscount + (ship?.price ?? 0);
     return { lines, count, subtotal, savings, blocked, promo: code, discountAmount, shipping: ship, total, payDiscount, payMethod };
-  }, [cart, items, discounts, rates, promo, city, now, payMethod]);
+  }, [cart, items, rates, promo, verdict, city, payMethod]);
+}
+
+/** Asks the server what the promo code is worth whenever the code or the bag changes. Mounted once for the whole storefront. */
+export function usePromoSync() {
+  const promo = useShopStore((s) => s.promo);
+  const cart = useShopStore((s) => s.cart);
+  const setResult = useShopStore((s) => s.setPromoResult);
+  const sig = JSON.stringify(Object.entries(cart).sort());
+  useEffect(() => {
+    if (!promo || sig === "[]") {
+      // not a store write unless something is there to clear: a write before the saved bag is read would save an empty bag over it
+      if (useShopStore.getState().promoResult) setResult(null);
+      return;
+    }
+    let live = true;
+    const t = window.setTimeout(() => {
+      const lines = (JSON.parse(sig) as [string, number][]).map(([key, qty]) => ({ key, qty }));
+      checkPromo(promo, lines)
+        .then((r) => live && setResult({ ...r, code: promo }))
+        .catch(() => live && setResult({ code: promo, ok: false, amount: 0, freeShipping: false, error: { en: "Could not check the code. Try again.", ar: "تعذّر التحقق من الكود. حاول مرة أخرى." } }));
+    }, 250);
+    return () => {
+      live = false;
+      window.clearTimeout(t);
+    };
+  }, [promo, sig, setResult]);
 }

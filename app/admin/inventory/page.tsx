@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Download, Minus, Plus, Search } from "lucide-react";
 import { PageHead, btnDark, btnLight, card, input } from "@/components/admin/AdminShell";
-import { CATEGORY_META } from "@/data/products";
+import { categoryName } from "@/lib/catalog";
 import { isLow, useCatalogStore, type AdjustReason } from "@/store/useCatalogStore";
 import { downloadCsv } from "@/lib/csv";
 import { useLangStore, useLocalized } from "@/lib/i18n";
@@ -23,6 +23,7 @@ export default function InventoryPage() {
   const l = useLocalized();
   const lang = useLangStore((s) => s.lang);
   const items = useCatalogStore((s) => s.items);
+  const categories = useCatalogStore((s) => s.categories);
   const adjustments = useCatalogStore((s) => s.adjustments);
   const adjust = useCatalogStore((s) => s.adjustStock);
   const setStock = useCatalogStore((s) => s.setStock);
@@ -119,7 +120,7 @@ export default function InventoryPage() {
                   : { t: l({ en: "In stock", ar: "متوفر" }), c: "bg-[#cdfee1] text-[#0c5132]" };
                 return (
                   <tr key={i.id + v.key} className="border-b border-[#f0f0f0] last:border-0">
-                    <td className="p-3"><div className="font-medium">{i.name[lang]}</div><div className="text-xs text-[#8a8a8a]">{v.label[lang]} · {CATEGORY_META[i.categoryId].label[lang]}</div></td>
+                    <td className="p-3"><div className="font-medium">{i.name[lang]}</div><div className="text-xs text-[#8a8a8a]">{v.label[lang]} · {categoryName(categories, i.categoryId, lang)}</div></td>
                     <td className="p-3 text-[#616161]" dir="ltr">{v.sku}</td>
                     <td className="p-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${status.c}`}>{status.t}</span></td>
                     <td className="p-3"><input type="number" min={0} dir="ltr" aria-label={`${i.name.en} ${v.label.en} alert`} className={`${input} !w-20`} value={v.threshold} onChange={(e) => setVariant(i.id, v.key, { threshold: Math.max(0, Number(e.target.value)) })} /></td>

@@ -6,7 +6,7 @@ import Reveal from "@/components/ui/Reveal";
 import { SplitText } from "@/components/ui/motion";
 import { useLangStore } from "@/lib/lang";
 import { waLink } from "@/lib/site";
-import { useCatalogStore } from "@/store/useCatalogStore";
+import { sendMessage } from "@/lib/client/shop";
 
 const VOLUMES = [
   { id: "small", en: "Under 10 kg a month", ar: "أقل من 10 كجم شهرياً" },
@@ -22,11 +22,11 @@ const field =
 export function Business() {
   const lang = useLangStore((s) => s.lang);
   const ar = lang === "ar";
-  const addMessage = useCatalogStore((s) => s.addMessage);
   const [f, setF] = useState({ company: "", person: "", phone: "", volume: "mid", note: "" });
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const digits = f.phone.replace(/\D/g, "");
   const bad = {
@@ -45,17 +45,17 @@ export function Business() {
       return;
     }
     setBusy(true);
-    window.setTimeout(() => {
-      const v = VOLUMES.find((x) => x.id === f.volume);
-      addMessage({
-        name: `${f.person.trim()} (${f.company.trim()})`,
-        contact: f.phone.trim(),
-        topic: "business",
-        body: [`Company: ${f.company.trim()}`, `Volume: ${v?.en}`, f.note.trim()].filter(Boolean).join("\n"),
-      });
-      setSent(true);
-      setBusy(false);
-    }, 600);
+    setFailed(false);
+    const v = VOLUMES.find((x) => x.id === f.volume);
+    sendMessage({
+      name: `${f.person.trim()} (${f.company.trim()})`,
+      contact: f.phone.trim(),
+      topic: "business",
+      body: [`Company: ${f.company.trim()}`, `Volume: ${v?.en}`, f.note.trim()].filter(Boolean).join("\n"),
+    })
+      .then(() => setSent(true))
+      .catch(() => setFailed(true))
+      .finally(() => setBusy(false));
   };
 
   const uses = ar ? ["مقاهٍ ومطاعم", "مكاتب وشركات", "فنادق وفعاليات"] : ["Cafés and restaurants", "Offices and companies", "Hotels and events"];
@@ -127,6 +127,7 @@ export function Business() {
                   <button type="submit" disabled={busy} className="btn w-full border-sand bg-sand text-green hover:bg-white sm:w-auto">
                     {busy ? (<><Loader2 className="h-4 w-4 animate-spin" />{ar ? "جارٍ الإرسال" : "Sending"}</>) : ar ? "اطلب عرضاً" : "Request an offer"}
                   </button>
+                  {failed && <p role="alert" className="mt-3 text-sm text-sand">{ar ? "تعذّر الإرسال. حاول مرة أخرى أو راسلنا على واتساب." : "We could not send it. Please try again or message us on WhatsApp."}</p>}
                 </div>
               </form>
             )}

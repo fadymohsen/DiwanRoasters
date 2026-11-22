@@ -9,7 +9,8 @@ import CartDrawer from "@/components/layout/CartDrawer";
 import OrderSummary from "@/components/shop/OrderSummary";
 import { LineSkeleton } from "@/components/shop/CartLines";
 import { useBagReady, useCartLines } from "@/lib/cart";
-import { useCatalogStore, type Order, type PayMethod } from "@/store/useCatalogStore";
+import type { Order, PayMethod } from "@/lib/types";
+import { ApiError, submitOrder } from "@/lib/client/shop";
 import { useShopStore } from "@/store/useShopStore";
 import { useLocalized } from "@/lib/i18n";
 import { SplitText } from "@/components/ui/motion";
@@ -35,20 +36,20 @@ const inputCls = (bad: boolean) =>
 
 export default function CheckoutPage() {
   const l = useLocalized();
-  const { lines, subtotal, blocked, promo, discountAmount, shipping, total, payDiscount, payMethod } = useCartLines();
+  const { lines, blocked, promo, payDiscount, payMethod } = useCartLines();
   const lang = useLangStore((s) => s.lang);
   const setPayMethod = useShopStore((s) => s.setPayMethod);
   const gift = useShopStore((s) => s.gift);
   const promoCode = useShopStore((s) => s.promo);
   const setShipCity = useShopStore((s) => s.setShipCity);
   const hydrated = useBagReady();
-  const placeOrder = useCatalogStore((s) => s.placeOrder);
   const clearCart = useShopStore((s) => s.clearCart);
 
   const [form, setForm] = useState<Form>(EMPTY);
   const [touched, setTouched] = useState<Partial<Record<keyof Form, boolean>>>({});
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Order | null>(null);
+  const [problem, setProblem] = useState("");
 
   const digits = form.phone.replace(/\D/g, "");
   const errors: Partial<Record<keyof Form, string>> = {
@@ -77,23 +78,27 @@ export default function CheckoutPage() {
       return;
     }
     setBusy(true);
-    window.setTimeout(() => {
-      const order = placeOrder({
-        customer: { ...form, name: form.name.trim() },
-        lines: lines.map((x) => ({ key: x.key, name: x.item.name, variant: x.variant.label, qty: x.qty, price: x.variant.price })),
-        subtotal,
-        discount: promo?.ok && promoCode ? { code: promoCode.toUpperCase(), amount: discountAmount } : null,
-        shipping: shipping ? { label: shipping.rate.name, price: shipping.price } : null,
-        total,
-        payMethod,
-        payDiscount,
-        gift: gift.on ? { name: gift.name.trim(), phone: gift.phone, message: gift.message.trim() } : null,
-      });
-      clearCart();
-      setDone(order);
-      setBusy(false);
-      window.scrollTo({ top: 0 });
-    }, 900);
+    setProblem("");
+    // the server prices the bag again from the database; what you saw is a preview
+    submitOrder({
+      customer: { ...form, name: form.name.trim() },
+      lines: lines.map((x) => ({ key: x.key, qty: x.qty })),
+      promo: promo?.ok ? promoCode : undefined,
+      payMethod,
+      lang,
+      gift: gift.on ? { name: gift.name.trim(), phone: gift.phone, message: gift.message.trim() } : null,
+      website: (document.getElementById("f-website") as HTMLInputElement | null)?.value ?? "",
+    })
+      .then((order) => {
+        clearCart();
+        setDone(order);
+        window.scrollTo({ top: 0 });
+      })
+      .catch((e: unknown) => {
+        if (e instanceof ApiError) setProblem((lang === "ar" ? e.ar : e.message) || e.message);
+        else setProblem(l({ en: "We could not reach the server. Check your connection and try again.", ar: "تعذّر الاتصال بالخادم. تأكد من الإنترنت وحاول مرة أخرى." }));
+      })
+      .finally(() => setBusy(false));
   };
 
   return (
@@ -142,6 +147,8 @@ export default function CheckoutPage() {
                 </div>
               ) : (
                 <form onSubmit={submit} noValidate aria-label={l({ en: "Checkout", ar: "إتمام الطلب" })} className="mt-10 grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
+                  {/* honeypot: hidden from people, tempting to bots */}
+                  <input id="f-website" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 opacity-0" />
                   <div className="space-y-10">
                     <fieldset>
                       <legend className="mb-4 font-editorial text-2xl font-semibold text-green">{l({ en: "Contact", ar: "بيانات التواصل" })}</legend>
@@ -215,6 +222,7 @@ export default function CheckoutPage() {
                   <aside className="h-fit rounded-2xl border border-n200 bg-n100 p-6 lg:sticky lg:top-28">
                     <h2 className="mb-4 font-editorial text-2xl font-semibold text-green">{l({ en: "Your order", ar: "طلبك" })}</h2>
                     <OrderSummary showItems />
+                    {problem && <p role="alert" className="mt-3 rounded-lg bg-[#A8322F]/10 px-3 py-2 text-sm text-[#A8322F]">{problem}</p>}
                     {blocked && <p role="alert" className="mt-3 text-xs text-[#A8322F]">{l({ en: "Some items are unavailable. Review your bag.", ar: "بعض المنتجات لم تعد متوفرة. راجع سلتك." })}</p>}
                     <button type="submit" disabled={busy || blocked} className="btn btn-primary mt-5 w-full disabled:opacity-60">
                       {busy ? (<><Loader2 className="h-4 w-4 animate-spin" />{l({ en: "Placing order", ar: "جارٍ تأكيد الطلب" })}</>) : l({ en: "Place order", ar: "تأكيد الطلب" })}

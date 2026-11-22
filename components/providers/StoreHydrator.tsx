@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { useCatalogStore } from "@/store/useCatalogStore";
 import { useShopStore } from "@/store/useShopStore";
+import { usePromoSync } from "@/lib/cart";
 
-/** Loads the saved catalog, orders and bag after mount, so server and first client render match. */
+/** Loads the saved bag after mount, so server and first client render match. */
 export default function StoreHydrator() {
+  // the saved bag is read first; anything that writes to the store has to come after
   useEffect(() => {
-    void useCatalogStore.persist.rehydrate();
     void useShopStore.persist.rehydrate();
   }, []);
+  usePromoSync();
   return null;
 }

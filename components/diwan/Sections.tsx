@@ -2,11 +2,12 @@
 
 import Link from "@/components/ui/LocLink";
 import { useState } from "react";
-import { BRAND_STORY, PERSONAS, PILLARS, PRODUCTS, REELS } from "@/data/products";
+import { BRAND_STORY, PERSONAS, PILLARS, REELS } from "@/data/products";
 import { AnimatePresence, motion } from "motion/react";
 import Reveal from "@/components/ui/Reveal";
 import { Magnetic, SplitText } from "@/components/ui/motion";
-import { useCatalogStore } from "@/store/useCatalogStore";
+import { isLive, useCatalogStore } from "@/store/useCatalogStore";
+import { minPrice } from "@/lib/catalog";
 import { money } from "@/lib/format";
 import { useLangStore } from "@/lib/i18n";
 
@@ -16,8 +17,8 @@ export function Story() {
   const items = useCatalogStore((s) => s.items);
   const [active, setActive] = useState<string>(PERSONAS[0].id);
   const persona = PERSONAS.find((x) => x.id === active) ?? PERSONAS[0];
-  const picks = persona.picks.map((id) => PRODUCTS.find((x) => x.id === id)!);
-  const from = (id: string) => Math.min(...(items.find((i) => i.id === id)?.variants.map((v) => v.price) ?? [0]));
+  // suggestions that were removed or switched off in the back office simply drop out
+  const picks = persona.picks.map((id) => items.find((x) => x.id === id && isLive(x))).filter((x): x is NonNullable<typeof x> => !!x);
 
   return (
     <section id="story" className="relative overflow-hidden bg-sand py-24 md:py-36" aria-labelledby="story-h">
@@ -97,8 +98,8 @@ export function Story() {
                         <img src={pk.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.05]" />
                       </span>
                       <span className="mt-3 flex items-baseline justify-between gap-3">
-                        <span className="font-serif text-2xl font-bold text-green transition group-hover:text-carnelian">{ar ? pk.name : pk.nameEn}</span>
-                        <span className="text-sm font-semibold text-green"><bdi>{money(from(pk.id), lang)}</bdi></span>
+                        <span className="font-serif text-2xl font-bold text-green transition group-hover:text-carnelian">{pk.name[lang]}</span>
+                        <span className="text-sm font-semibold text-green"><bdi>{money(minPrice(pk), lang)}</bdi></span>
                       </span>
                     </Link>
                   </motion.li>

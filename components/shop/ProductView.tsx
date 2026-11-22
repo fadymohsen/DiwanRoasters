@@ -10,21 +10,14 @@ import Reveal from "@/components/ui/Reveal";
 import { ImageReveal, SplitText } from "@/components/ui/motion";
 import AddToBagButton from "@/components/shop/AddToBagButton";
 import ProductCard from "@/components/diwan/ProductCard";
-import {
-  CATEGORY_META,
-  PRODUCTS,
-  ROAST_EN,
-  SPICE_EN,
-  variantKey,
-  type Product,
-  type Roast,
-  type Spice,
-} from "@/data/products";
+import { ROAST_EN, SPICE_EN, variantKey, type Roast, type Spice } from "@/data/products";
+import { categoryName, minPrice, productFromItem, roastMatrix } from "@/lib/catalog";
 import { inStock, isLive, isLow, lineKey, useCatalogStore } from "@/store/useCatalogStore";
 import { useLangStore, useLocalized } from "@/lib/i18n";
 import { money } from "@/lib/format";
 
-type Shot = "photo" | "front" | "back";
+/** a photo (by position) or one side of the DIWAN card */
+type Shot = number | "front" | "back";
 
 function Choice<T extends string>({ legend, options, value, onChange, show }: { legend: string; options: readonly T[]; value: T; onChange: (v: T) => void; show: (v: T) => string }) {
   return (
@@ -52,27 +45,32 @@ export default function ProductView({ id }: { id: string }) {
   const lang = useLangStore((s) => s.lang);
   const ar = lang === "ar";
   const items = useCatalogStore((s) => s.items);
+  const categories = useCatalogStore((s) => s.categories);
   const item = items.find((i) => i.id === id);
-  const p: Product | undefined = PRODUCTS.find((x) => x.id === id);
+  const p = useMemo(() => (item ? productFromItem(item, categories) : undefined), [item, categories]);
+  const matrix = useMemo(() => (item ? roastMatrix(item) : null), [item]);
 
-  const [roast, setRoast] = useState<Roast | undefined>(p?.roasts?.[0]);
-  const [spice, setSpice] = useState<Spice>("سادة");
+  const [roastPick, setRoast] = useState<Roast | undefined>(undefined);
+  const [spicePick, setSpice] = useState<Spice>("سادة");
   const [vk, setVk] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
-  const [shot, setShot] = useState<Shot>("photo");
+  const [shot, setShot] = useState<Shot>(0);
 
-  const key = p?.roasts && roast ? variantKey(roast, spice) : (vk ?? item?.variants[0]?.key ?? "default");
+  // roast and style come from the variants, so only combinations that exist can be chosen
+  const roast = matrix ? (roastPick && matrix.roasts.includes(roastPick) ? roastPick : matrix.roasts[0]) : undefined;
+  const styles = matrix && roast && item ? matrix.states.filter((st) => item.variants.some((v) => v.key === variantKey(roast, st))) : [];
+  const spice = styles.includes(spicePick) ? spicePick : styles[0];
+  const key = matrix && roast && spice ? variantKey(roast, spice) : (vk ?? item?.variants[0]?.key ?? "default");
   const variant = item?.variants.find((v) => v.key === key) ?? item?.variants[0];
   const live = !!item && isLive(item);
   const available = live && !!variant && inStock(variant);
   const maxQty = variant && variant.stock !== null ? Math.max(1, variant.stock) : 12;
 
   const related = useMemo(() => {
-    if (!p) return [];
-    const same = PRODUCTS.filter((x) => x.id !== p.id && x.categoryId === p.categoryId);
-    const other = PRODUCTS.filter((x) => x.id !== p.id && x.categoryId !== p.categoryId);
-    return [...same, ...other].slice(0, 4);
-  }, [p]);
+    if (!item) return [];
+    const others = items.filter((x) => x.id !== item.id && isLive(x));
+    return [...others.filter((x) => x.categoryId === item.categoryId), ...others.filter((x) => x.categoryId !== item.categoryId)].slice(0, 4);
+  }, [item, items]);
 
   if (!item || (!live && item.status === "archived")) {
     return (
@@ -90,8 +88,11 @@ export default function ProductView({ id }: { id: string }) {
 
   const name = item.name[lang];
   const copy = item.description[lang];
-  const cat = CATEGORY_META[item.categoryId].label[lang];
+  const cat = categoryName(categories, item.categoryId, lang);
   const steps = p ? (ar ? p.steps : p.stepsEn) : [];
+  const photos = item.images.length ? item.images : [item.image];
+  const cards = !!item.details.showCard;
+  const weight = item.details.weight;
 
   const price = variant ? (
     <div className="flex items-baseline gap-3">
@@ -101,11 +102,11 @@ export default function ProductView({ id }: { id: string }) {
   ) : null;
 
   const facts: [string, string][] = [
-    [l({ en: "Pack", ar: "العبوة" }), l({ en: "200 g pouch with a zip, no valve", ar: "كيس 200 جم بسوستة، بدون فالف" })],
-    ...(p?.roasts ? ([[l({ en: "Roast", ar: "التحميص" }), p.roasts.map((r) => (ar ? r : ROAST_EN[r])).join(ar ? " أو " : " or ")]] as [string, string][]) : []),
+    ...(weight ? ([[l({ en: "Pack", ar: "العبوة" }), l({ en: `${weight.en} pouch with a zip, no valve`, ar: `كيس ${weight.ar} بسوستة، بدون فالف` })]] as [string, string][]) : []),
+    ...(matrix && p?.roasts ? ([[l({ en: "Roast", ar: "التحميص" }), p.roasts.map((r) => (ar ? r : ROAST_EN[r])).join(ar ? " أو " : " or ")]] as [string, string][]) : []),
     ...(p?.ratio ? ([[l({ en: "Blend", ar: "التوليفة" }), ar ? p.ratio.label : p.ratio.labelEn]] as [string, string][]) : []),
     ...(p?.type ? ([[l({ en: "Type", ar: "النوع" }), (ar ? p.type : p.typeEn) ?? ""]] as [string, string][]) : []),
-    [l({ en: "In the box", ar: "داخل البوكس" }), l({ en: "Your blend's card, tissue paper with a wax seal and the pouch", ar: "كارت التوليفة وورق زبدة بختم شمعي والكيس" })],
+    ...(cards ? ([[l({ en: "In the box", ar: "داخل البوكس" }), l({ en: "Your blend's card, tissue paper with a wax seal and the pouch", ar: "كارت التوليفة وورق زبدة بختم شمعي والكيس" })]] as [string, string][]) : []),
   ];
 
   return (
@@ -130,25 +131,28 @@ export default function ProductView({ id }: { id: string }) {
           {/* Gallery */}
           <div>
             <ImageReveal className="relative aspect-square rounded-2xl bg-n200">
-              {shot === "photo" && (
+              {typeof shot === "number" && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.image} alt={l({ en: `${item.name.en}, 200 g pack with its card`, ar: `${item.name.ar}، عبوة 200 جم مع كارتها` })} className="h-full w-full object-cover" />
+                <img src={photos[Math.min(shot, photos.length - 1)]} alt={l({ en: `${item.name.en}, pack`, ar: `${item.name.ar}، العبوة` })} className="h-full w-full object-cover" />
               )}
-              {p && shot !== "photo" && (
+              {p && cards && typeof shot === "string" && (
                 <div className="grid h-full place-items-center p-6 md:p-12" style={{ background: p.hex }}>
                   <div className="w-full max-w-[22rem]">
-                    <ProductCard product={p} roast={p.roasts ? roast : undefined} spice={p.roasts ? spice : undefined} flipped={shot === "back"} onFlip={(f) => setShot(f ? "back" : "front")} />
+                    <ProductCard product={p} roast={matrix ? roast : undefined} spice={matrix ? spice : undefined} flipped={shot === "back"} onFlip={(f) => setShot(f ? "back" : "front")} />
                   </div>
                 </div>
               )}
             </ImageReveal>
-            {p && (
-              <div className="mt-3 flex gap-3" role="group" aria-label={l({ en: "Product views", ar: "صور المنتج" })}>
-                {([["photo", l({ en: "Photo", ar: "الصورة" })], ["front", l({ en: "Card front", ar: "وجه الكارت" })], ["back", l({ en: "Card back", ar: "ظهر الكارت" })]] as [Shot, string][]).map(([s, label]) => (
-                  <button key={s} aria-pressed={shot === s} onClick={() => setShot(s)} className={`relative h-20 w-20 overflow-hidden rounded-xl border-2 transition sm:h-24 sm:w-24 ${shot === s ? "border-green" : "border-transparent opacity-80 hover:opacity-100"}`} aria-label={label}>
-                    {s === "photo" ? (
+            {p && (photos.length > 1 || cards) && (
+              <div className="mt-3 flex flex-wrap gap-3" role="group" aria-label={l({ en: "Product views", ar: "صور المنتج" })}>
+                {([
+                  ...photos.map((src, i) => [i, l({ en: `Photo ${i + 1}`, ar: `الصورة ${i + 1}` }), src] as [Shot, string, string]),
+                  ...(cards ? ([["front", l({ en: "Card front", ar: "وجه الكارت" }), ""], ["back", l({ en: "Card back", ar: "ظهر الكارت" }), ""]] as [Shot, string, string][]) : []),
+                ]).map(([s, label, src]) => (
+                  <button key={String(s)} aria-pressed={shot === s} onClick={() => setShot(s)} className={`relative h-20 w-20 overflow-hidden rounded-xl border-2 transition sm:h-24 sm:w-24 ${shot === s ? "border-green" : "border-transparent opacity-80 hover:opacity-100"}`} aria-label={label}>
+                    {src ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.image} alt="" className="h-full w-full object-cover" />
+                      <img src={src} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <span className="grid h-full w-full place-items-center px-1 text-center text-[11px] font-semibold leading-tight text-sand" style={{ background: p.hex }}>{label}</span>
                     )}
@@ -176,13 +180,13 @@ export default function ProductView({ id }: { id: string }) {
             {!available && <p className="mt-1 text-sm font-medium text-[#A8322F]">{l({ en: "Currently unavailable", ar: "غير متوفر حالياً" })}</p>}
 
             <div className="mt-7 space-y-5">
-              {p?.roasts && roast && (
+              {matrix && roast && spice && (
                 <>
-                  <Choice legend={l({ en: "Roast", ar: "درجة التحميص" })} options={p.roasts} value={roast} onChange={setRoast} show={(r) => (ar ? r : ROAST_EN[r])} />
-                  <Choice legend={l({ en: "Style", ar: "النوع" })} options={p.states!} value={spice} onChange={setSpice} show={(s) => (ar ? s : SPICE_EN[s])} />
+                  <Choice legend={l({ en: "Roast", ar: "درجة التحميص" })} options={matrix.roasts} value={roast} onChange={setRoast} show={(r) => (ar ? r : ROAST_EN[r])} />
+                  <Choice legend={l({ en: "Style", ar: "النوع" })} options={styles} value={spice} onChange={setSpice} show={(s) => (ar ? s : SPICE_EN[s])} />
                 </>
               )}
-              {!p?.roasts && item.variants.length > 1 && (
+              {!matrix && item.variants.length > 1 && (
                 <Choice legend={l({ en: "Option", ar: "الخيار" })} options={item.variants.map((v) => v.key)} value={key} onChange={setVk} show={(k) => item.variants.find((v) => v.key === k)?.label[lang] ?? k} />
               )}
 
@@ -197,7 +201,7 @@ export default function ProductView({ id }: { id: string }) {
             </div>
 
             <div className="mt-8">
-              {variant && <AddToBagButton lineKey={lineKey(item.id, variant.key)} qty={qty} disabled={!available} flyImage={item.image} className="w-full" />}
+              {variant && <AddToBagButton lineKey={lineKey(item.id, variant.key)} qty={qty} disabled={!available} flyImage={photos[0]} className="w-full" />}
             </div>
             <p className="mt-4 text-sm text-n500">{l({ en: "Cash on delivery. We call you to confirm before it ships.", ar: "الدفع عند الاستلام. نتصل بك لتأكيد الطلب قبل الشحن." })}</p>
 
@@ -239,8 +243,7 @@ export default function ProductView({ id }: { id: string }) {
           <h2 className="font-editorial text-3xl font-semibold text-green md:text-5xl">{l({ en: "More from the table", ar: "توليفات أخرى" })}</h2>
           <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
             {related.map((r, i) => {
-              const ri = items.find((x) => x.id === r.id);
-              const from = ri ? Math.min(...ri.variants.map((v) => v.price)) : 0;
+              const from = minPrice(r);
               return (
                 <Reveal key={r.id} delay={i * 0.05}>
                   <Link href={`/shop/${r.id}`} className="group block">
@@ -249,7 +252,7 @@ export default function ProductView({ id }: { id: string }) {
                       <img src={r.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]" />
                     </span>
                     <span className="mt-3 flex items-baseline justify-between gap-2">
-                      <span className="font-editorial text-xl font-semibold text-green">{ar ? r.name : r.nameEn}</span>
+                      <span className="font-editorial text-xl font-semibold text-green">{r.name[lang]}</span>
                       <span className="text-sm font-semibold text-green"><bdi>{money(from, lang)}</bdi></span>
                     </span>
                   </Link>

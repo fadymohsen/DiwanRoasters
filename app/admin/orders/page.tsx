@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Check, Download, Plus, Search, X } from "lucide-react";
 import { PageHead, btnDark, btnLight, card, input } from "@/components/admin/AdminShell";
 import { COURIERS, FLOW, STATUSES, nextStatus } from "@/components/admin/orderMeta";
-import { useCatalogStore, type NewOrder, type Order, type OrderStatus } from "@/store/useCatalogStore";
+import { useCatalogStore, type Order, type OrderStatus } from "@/store/useCatalogStore";
 import { useToastStore } from "@/store/useToastStore";
 import { downloadCsv } from "@/lib/csv";
 import { useLangStore, useLocalized } from "@/lib/i18n";
@@ -79,7 +79,7 @@ function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             {next && <button className={btnDark} onClick={() => { setStatus(order.id, next); push(l({ en: `Order marked as ${stMeta(next).en}`, ar: `تم تحديد الطلب كـ ${stMeta(next).ar}` })); }}>{l({ en: "Mark as", ar: "تحديد كـ" })} {l(stMeta(next))}</button>}
             {!order.payment.paid && !cancelled && <button className={btnLight} onClick={() => { setPaid(order.id, true); push(l({ en: "Payment recorded", ar: "تم تسجيل الدفع" })); }}>{l({ en: "Mark as paid", ar: "تسجيل كمدفوع" })}</button>}
             {!cancelled && order.status !== "delivered" && (
-              <button className={`${btnLight} text-[#8e0b21]`} onClick={() => askConfirm({ title: l({ en: "Cancel this order?", ar: "إلغاء هذا الطلب؟" }), confirmLabel: l({ en: "Confirm", ar: "تأكيد" }), cancelLabel: l({ en: "Cancel", ar: "إلغاء" }), danger: true }).then((ok) => ok && setStatus(order.id, "cancelled"))}>{l({ en: "Cancel order", ar: "إلغاء الطلب" })}</button>
+              <button className={`${btnLight} text-[#8e0b21]`} onClick={() => askConfirm({ title: l({ en: "Cancel this order?", ar: "إلغاء هذا الطلب؟" }), confirmLabel: l({ en: "Confirm", ar: "تأكيد" }), cancelLabel: l({ en: "Cancel", ar: "إلغاء" }), danger: true }).then((ok) => { if (ok) void setStatus(order.id, "cancelled"); })}>{l({ en: "Cancel order", ar: "إلغاء الطلب" })}</button>
             )}
           </div>
 
@@ -183,7 +183,8 @@ function Draft({ onClose, onCreated }: { onClose: () => void; onCreated: (id: st
   const l = useLocalized();
   const lang = useLangStore((s) => s.lang);
   const items = useCatalogStore((s) => s.items);
-  const place = useCatalogStore((s) => s.placeOrder);
+  const createOrder = useCatalogStore((s) => s.createOrder);
+  const [busy, setBusy] = useState(false);
   const push = useToastStore((s) => s.push);
   const [cust, setCust] = useState({ name: "", phone: "", email: "", address: "", city: "", notes: "" });
   const [rows, setRows] = useState<{ key: string; qty: number }[]>([]);
@@ -196,21 +197,21 @@ function Draft({ onClose, onCreated }: { onClose: () => void; onCreated: (id: st
   const subtotal = lines.reduce((a, r) => a + r.qty * r.o.v.price, 0);
   const ship = Number(shipPrice) || 0;
 
-  const create = () => {
+  const create = async () => {
     if (!cust.name.trim() || cust.phone.replace(/\D/g, "").length < 10) return setError(l({ en: "Add the customer name and a phone number.", ar: "أضف اسم العميل ورقم هاتف." }));
     if (lines.length === 0) return setError(l({ en: "Add at least one product.", ar: "أضف منتجاً واحداً على الأقل." }));
-    const order: NewOrder = {
-      customer: cust,
-      lines: lines.map((r) => ({ key: r.key, name: r.o.i.name, variant: r.o.v.label, qty: r.qty, price: r.o.v.price })),
-      subtotal,
-      discount: null,
-      shipping: ship ? { label: { en: "Manual", ar: "يدوي" }, price: ship } : null,
-      total: subtotal + ship,
-      source: "draft",
-    };
-    const created = place(order);
-    push(l({ en: `Order ${created.id} created`, ar: `تم إنشاء الطلب ${created.id}` }));
-    onCreated(created.id);
+    setBusy(true);
+    setError("");
+    try {
+      // the server prices the order from the catalog and takes the stock
+      const created = await createOrder({ customer: cust, lines: lines.map((r) => ({ key: r.key, qty: r.qty })), shippingPrice: ship });
+      push(l({ en: `Order ${created.id} created`, ar: `تم إنشاء الطلب ${created.id}` }));
+      onCreated(created.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not create the order.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -253,7 +254,7 @@ function Draft({ onClose, onCreated }: { onClose: () => void; onCreated: (id: st
           </section>
         </div>
         <div className="flex items-center gap-3 border-t border-[#e1e1e1] bg-white px-5 py-4">
-          <button className={btnDark} onClick={create}>{l({ en: "Create order", ar: "إنشاء الطلب" })}</button>
+          <button className={btnDark} onClick={create} disabled={busy}>{l({ en: "Create order", ar: "إنشاء الطلب" })}</button>
           <button className={btnLight} onClick={onClose}>{l({ en: "Cancel", ar: "إلغاء" })}</button>
           {error && <p role="alert" className="text-sm text-[#A8322F]">{error}</p>}
         </div>
