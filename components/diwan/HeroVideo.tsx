@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, ChevronDown } from "lucide-react";
-import { useLocalized, translations } from "@/lib/i18n";
+import { useLangStore, useLocalized, translations } from "@/lib/i18n";
 
 const FPS = 24;
 /** Frame the video returns to after its last frame; must match LOOP in scripts/prepare-scene-clips.mjs. */
@@ -19,6 +19,7 @@ const rise = (delay: number) => ({
 export default function HeroVideo() {
   const l = useLocalized();
   const t = translations;
+  const ar = useLangStore((s) => s.lang) === "ar";
   const video = useRef<HTMLVideoElement>(null);
   const section = useRef<HTMLElement>(null);
 
@@ -75,18 +76,18 @@ export default function HeroVideo() {
 
       <div className="relative z-10 h-full">
         {/* Title + description + CTA: mobile stacked, desktop left for LTR / right for RTL */}
-        <div className="absolute inset-x-0 top-[max(13%,4.5rem)] flex flex-col items-start rtl:items-end px-5 md:top-[22%] md:flex-row md:items-start md:justify-start rtl:md:justify-end md:px-20">
+        <div className={`absolute inset-x-0 top-[max(13%,4.5rem)] flex flex-col px-5 md:top-[22%] md:flex-row md:items-start md:px-20 ${ar ? "items-end md:justify-end" : "items-start md:justify-start"}`}>
           <h1 className="sr-only">{l({ en: "DIWAN", ar: "ديوان" })}</h1>
-          <div className="flex flex-col items-start gap-5 rtl:items-end rtl:md:items-end md:max-w-[38vw]">
+          <div className={`flex flex-col gap-5 md:max-w-[38vw] ${ar ? "items-end" : "items-start"}`}>
             <motion.p
               {...rise(0.3)}
-              className="font-arabic text-[clamp(1.7rem,8vw,2.4rem)] font-bold leading-tight text-green rtl:text-end rtl:md:text-end md:text-[clamp(1.8rem,3.3vw,3.6rem)] [@media(max-height:560px)]:hidden"
+              className={`font-arabic text-[clamp(1.7rem,8vw,2.4rem)] font-bold leading-tight text-green md:text-[clamp(1.8rem,3.3vw,3.6rem)] [@media(max-height:560px)]:hidden ${ar ? "text-end" : "text-start"}`}
             >
               {l({ en: "The story begins with a cup", ar: "الحكاية تبدأ بفنجان" })}
             </motion.p>
             <motion.p
               {...rise(0.45)}
-              className="max-w-sm text-sm leading-relaxed text-ink rtl:text-end rtl:md:text-end md:text-base [@media(max-height:560px)]:hidden"
+              className={`max-w-sm text-sm leading-relaxed text-ink md:text-base [@media(max-height:560px)]:hidden ${ar ? "text-end" : "text-start"}`}
             >
               {l({
                 en: "At DIWAN, we believe everyone has their own taste in coffee. That's why we offer different blends for you to choose the one that suits you.",
