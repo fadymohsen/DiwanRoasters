@@ -8,8 +8,8 @@ export const SITE = {
   instagram: "https://instagram.com/diwan_eg",
   tiktok: "https://tiktok.com/@diwan_eg",
   /** Instapay address and wallet number to show at checkout. While empty, customers are told the details arrive on WhatsApp. */
-  instapay: "",
-  wallet: "01002745122",
+  instapay: "01155278938",
+  wallet: "01155278938",
   /** extra discount for paying by Instapay or wallet, in percent */
   payDiscountPct: 5,
   baseUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
